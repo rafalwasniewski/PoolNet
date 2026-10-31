@@ -1,0 +1,17 @@
+services:
+  poolnet:
+    build:
+      context: .
+      file: Containerfile
+    image: poolnet:latest
+    container_name: poolnet
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+    volumes:
+      - poolnet_data:/app/data:Z
+
+volumes:
+  poolnet_data:

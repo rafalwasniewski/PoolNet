@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/PoolNet.Application/PoolNet.Application.csproj" />
+    <Project Path="src/PoolNet.Domain/PoolNet.Domain.csproj" />
+    <Project Path="src/PoolNet.Infrastructure/PoolNet.Infrastructure.csproj" />
+    <Project Path="src/PoolNet.Web/PoolNet.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/PoolNet.UnitTests/PoolNet.UnitTests.csproj" />
+  </Folder>
+</Solution>

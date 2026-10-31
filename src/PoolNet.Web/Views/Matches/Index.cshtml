@@ -1,0 +1,119 @@
+@model List<MatchDto>
+@{
+    ViewData["Title"] = "Mecze Bilardowe";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-controller text-primary me-2"></i>Mecze</h2>
+        <p class="text-muted mb-0">Ewidencja wszystkich pojedynków towarzyskich, ligowych i pucharowych</p>
+    </div>
+    @if (User.IsInRole("Admin"))
+    {
+        <a asp-action="CreateFriendly" class="btn btn-warning fw-semibold">
+            <i class="bi bi-play-circle-fill me-1"></i> Rozegraj szybki mecz towarzyski
+        </a>
+    }
+</div>
+
+<div class="card card-custom">
+    <div class="card-body p-0">
+        @if (Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Data</th>
+                            <th>Odmiana</th>
+                            <th>Typ rozgrywek</th>
+                            <th>Gracz 1</th>
+                            <th class="text-center">Wynik</th>
+                            <th>Gracz 2</th>
+                            <th>Zwycięzca</th>
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <th class="text-end">Zarządzaj</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var m in Model)
+                        {
+                            <tr>
+                                <td class="text-muted small">
+                                    @(m.PlayedAt?.ToString("dd.MM.yyyy HH:mm") ?? "Oczekujący")
+                                </td>
+                                <td>
+                                    @if (m.GameType == BilliardGameType.EightBall)
+                                    {
+                                        <span class="badge badge-ball-8">Bila 8</span>
+                                    }
+                                    else if (m.GameType == BilliardGameType.NineBall)
+                                    {
+                                        <span class="badge badge-ball-9">Bila 9</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-ball-10">Bila 10</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border">@m.ContextName</span>
+                                </td>
+                                <td>
+                                    <a asp-controller="Players" asp-action="Details" asp-route-id="@m.Player1Id" class="text-decoration-none @(m.WinnerId == m.Player1Id ? "fw-bold text-success" : "text-dark")">
+                                        @m.Player1Nickname
+                                    </a>
+                                </td>
+                                <td class="text-center">
+                                    @if (m.Status == MatchStatus.Completed)
+                                    {
+                                        <span class="badge bg-dark fs-6">@m.Player1Score : @m.Player2Score</span>
+                                        <div class="small text-muted">do @m.FirstToWins wygranych</div>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Race to @m.FirstToWins</span>
+                                    }
+                                </td>
+                                <td>
+                                    <a asp-controller="Players" asp-action="Details" asp-route-id="@m.Player2Id" class="text-decoration-none @(m.WinnerId == m.Player2Id ? "fw-bold text-success" : "text-dark")">
+                                        @m.Player2Nickname
+                                    </a>
+                                </td>
+                                <td>
+                                    @if (m.Status == MatchStatus.Completed)
+                                    {
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-trophy-fill me-1"></i> @m.WinnerNickname
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-light text-muted border">W trakcie</span>
+                                    }
+                                </td>
+                                @if (User.IsInRole("Admin"))
+                                {
+                                    <td class="text-end">
+                                        <a asp-action="RecordScore" asp-route-id="@m.Id" class="btn btn-sm btn-outline-primary">
+                                            @(m.Status == MatchStatus.Completed ? "Zmień wynik" : "Wpisz wynik")
+                                        </a>
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center p-5 text-muted">
+                <i class="bi bi-controller fs-1 mb-2"></i>
+                <p>Brak rozegranych meczów w systemie.</p>
+            </div>
+        }
+    </div>
+</div>

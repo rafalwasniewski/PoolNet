@@ -1,0 +1,208 @@
+@model LeagueDetailsDto
+@{
+    ViewData["Title"] = $"Liga - {Model.Name}";
+}
+
+<!-- Nagłówek Ligi -->
+<div class="card card-custom mb-4 bg-white">
+    <div class="card-body p-4 d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge @(Model.Status == LeagueStatus.Finished ? "bg-secondary" : "bg-success")">
+                    @(Model.Status == LeagueStatus.Finished ? "Zakończona" : "W toku")
+                </span>
+                @if (Model.GameType == BilliardGameType.EightBall)
+                {
+                    <span class="badge badge-ball-8">Bila 8 (Ósemka)</span>
+                }
+                else if (Model.GameType == BilliardGameType.NineBall)
+                {
+                    <span class="badge badge-ball-9">Bila 9 (Dziewiątka)</span>
+                }
+                else
+                {
+                    <span class="badge badge-ball-10">Bila 10 (Dziesiątka)</span>
+                }
+                <span class="badge bg-light text-dark border">Race to @Model.RaceTo</span>
+            </div>
+            <h2 class="fw-bold mb-0">@Model.Name</h2>
+            <small class="text-muted">
+                System kołowy &bull; Mecz i rewanż (każdy z każdym 2 mecze) &bull; Uczestników: @Model.Standings.Count &bull; 3 pkt za wygraną
+            </small>
+        </div>
+        <div>
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Lista lig
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Tabela ligowa -->
+<div class="card card-custom mb-4">
+    <div class="card-header bg-white py-3">
+        <h5 class="mb-0 fw-bold"><i class="bi bi-table text-primary me-2"></i>Aktualna Tabela Ligowa</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light sticky-top">
+                    <tr>
+                        <th style="width: 50px;" class="text-center">#</th>
+                        <th>Gracz</th>
+                        <th class="text-center">Mecze</th>
+                        <th class="text-center">W</th>
+                        <th class="text-center">P</th>
+                        <th class="text-center">Partie (Zdobyte : Stracone)</th>
+                        <th class="text-center">Bilans</th>
+                        <th class="text-center fw-bold">Punkty</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var s in Model.Standings)
+                    {
+                        <tr class="@(s.Position == 1 ? "table-warning bg-opacity-25" : "")">
+                            <td class="text-center fw-bold">
+                                @if (s.Position == 1)
+                                {
+                                    <span class="text-warning fs-5">🥇</span>
+                                }
+                                else if (s.Position == 2)
+                                {
+                                    <span class="text-secondary fs-6">🥈</span>
+                                }
+                                else if (s.Position == 3)
+                                {
+                                    <span class="text-danger fs-6">🥉</span>
+                                }
+                                else
+                                {
+                                    @s.Position
+                                }
+                            </td>
+                            <td>
+                                <a asp-controller="Players" asp-action="Details" asp-route-id="@s.PlayerId" class="fw-bold text-decoration-none text-dark">
+                                    <i class="bi bi-person-fill text-primary me-1"></i> @s.Nickname
+                                </a>
+                            </td>
+                            <td class="text-center">@s.MatchesPlayed</td>
+                            <td class="text-center"><span class="badge bg-success">@s.Wins</span></td>
+                            <td class="text-center"><span class="badge bg-secondary">@s.Losses</span></td>
+                            <td class="text-center">@s.FramesWon : @s.FramesLost</td>
+                            <td class="text-center fw-semibold @(s.FrameDifference >= 0 ? "text-success" : "text-danger")">
+                                @(s.FrameDifference > 0 ? "+" : "")@s.FrameDifference
+                            </td>
+                            <td class="text-center fs-5 fw-bold text-primary">@s.Points</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Terminarz i wyniki spotkań -->
+<div class="card card-custom">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold"><i class="bi bi-calendar3 text-success me-2"></i>Terminarz i Wyniki Spotkań (Mecz i Rewanż)</h5>
+        <span class="badge bg-secondary">Łącznie kolejek: @Model.Rounds.Count</span>
+    </div>
+    <div class="card-body p-4">
+        <div class="row g-4" style="max-height: 800px; overflow-y: auto;">
+            @foreach (var round in Model.Rounds)
+            {
+                <div class="col-lg-6">
+                    <div class="border rounded-3 p-3 bg-light h-100">
+                        <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                            <h6 class="fw-bold mb-0 text-success">
+                                <i class="bi bi-flag me-1"></i> @round.Title
+                            </h6>
+                            <span class="badge bg-secondary">@round.Matches.Count spotkań</span>
+                        </div>
+
+                        <div class="d-flex flex-column gap-2">
+                            @foreach (var m in round.Matches)
+                            {
+                                <div class="bg-white p-2 rounded border d-flex justify-content-between align-items-center">
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex justify-content-between align-items-center me-2">
+                                            <span class="@(m.WinnerId == m.Player1Id ? "fw-bold text-success" : "")">
+                                                @m.Player1Nickname
+                                            </span>
+                                            <span class="badge bg-dark">
+                                                @(m.Status == MatchStatus.Completed ? $"{m.Player1Score} : {m.Player2Score}" : "vs")
+                                            </span>
+                                            <span class="@(m.WinnerId == m.Player2Id ? "fw-bold text-success" : "")">
+                                                @m.Player2Nickname
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    @if (User.IsInRole("Admin"))
+                                    {
+                                        <button type="button" class="btn btn-sm btn-outline-primary ms-2"
+                                                onclick="openLeagueScoreModal('@m.LeagueMatchId', '@m.Player1Nickname', '@m.Player2Nickname', @m.Player1Score, @m.Player2Score)">
+                                            <i class="bi bi-pencil-square"></i>
+                                        </button>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@if (User.IsInRole("Admin"))
+{
+    <!-- Pojedynczy reużywalny modal do wpisywania wyników meczów ligowych -->
+    <div class="modal fade" id="leagueScoreModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form asp-action="RecordMatchScore" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="leagueId" value="@Model.Id" />
+                    <input type="hidden" id="modalLeagueMatchId" name="leagueMatchId" value="" />
+
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold">Wprowadź wynik meczu</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zamknij"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <p class="text-muted small">Race to @Model.RaceTo (zwycięzca musi mieć dokładnie @Model.RaceTo partii)</p>
+                        <div class="row align-items-center justify-content-center my-3">
+                            <div class="col-5">
+                                <label id="modalPlayer1Name" class="form-label fw-bold"></label>
+                                <input type="number" id="modalPlayer1Score" name="player1Score" value="0" min="0" max="@Model.RaceTo" class="form-control form-control-lg text-center fs-3 fw-bold" required />
+                            </div>
+                            <div class="col-2 fs-3 fw-bold text-muted">:</div>
+                            <div class="col-5">
+                                <label id="modalPlayer2Name" class="form-label fw-bold"></label>
+                                <input type="number" id="modalPlayer2Score" name="player2Score" value="0" min="0" max="@Model.RaceTo" class="form-control form-control-lg text-center fs-3 fw-bold" required />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
+                        <button type="submit" class="btn btn-success fw-semibold">Zapisz wynik</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    @section Scripts {
+        <script>
+            function openLeagueScoreModal(matchId, p1Name, p2Name, s1, s2) {
+                document.getElementById('modalLeagueMatchId').value = matchId;
+                document.getElementById('modalPlayer1Name').textContent = p1Name;
+                document.getElementById('modalPlayer2Name').textContent = p2Name;
+                document.getElementById('modalPlayer1Score').value = s1;
+                document.getElementById('modalPlayer2Score').value = s2;
+                new bootstrap.Modal(document.getElementById('leagueScoreModal')).show();
+            }
+        </script>
+    }
+}

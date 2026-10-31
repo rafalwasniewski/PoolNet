@@ -1,0 +1,100 @@
+@model List<LeagueSummaryDto>
+@{
+    ViewData["Title"] = "Ligi Bilardowe";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-trophy-fill text-success me-2"></i>Ligi Bilardowe</h2>
+        <p class="text-muted mb-0">System kołowy dwurundowy (mecz i rewanż &ndash; każdy gra z każdym 2 razy)</p>
+    </div>
+    @if (User.IsInRole("Admin"))
+    {
+        <a asp-action="Create" class="btn btn-success fw-semibold">
+            <i class="bi bi-plus-circle me-1"></i> Utwórz nową ligę
+        </a>
+    }
+</div>
+
+<div class="row g-4">
+    @if (Model.Any())
+    {
+        @foreach (var league in Model)
+        {
+            <div class="col-md-6 col-lg-4">
+                <div class="card card-custom h-100">
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                        <span class="badge @(league.Status == LeagueStatus.Finished ? "bg-secondary" : "bg-success")">
+                            @(league.Status == LeagueStatus.Finished ? "Zakończona" : "W toku")
+                        </span>
+                        @if (league.GameType == BilliardGameType.EightBall)
+                        {
+                            <span class="badge badge-ball-8">Bila 8</span>
+                        }
+                        else if (league.GameType == BilliardGameType.NineBall)
+                        {
+                            <span class="badge badge-ball-9">Bila 9</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-ball-10">Bila 10</span>
+                        }
+                    </div>
+                    <div class="card-body">
+                        <h4 class="card-title fw-bold">@league.Name</h4>
+                        <div class="text-muted small mb-3">
+                            Utworzona: @league.CreatedAt.ToString("dd.MM.yyyy")
+                        </div>
+
+                        <div class="bg-light p-3 rounded mb-3">
+                            <div class="d-flex justify-content-between small mb-1">
+                                <span>Uczestnicy:</span>
+                                <strong>@league.ParticipantsCount graczy</strong>
+                            </div>
+                            <div class="d-flex justify-content-between small mb-1">
+                                <span>Race to (partie):</span>
+                                <strong>do @league.RaceTo wygranych</strong>
+                            </div>
+                            <div class="d-flex justify-content-between small">
+                                <span>Rozegrane mecze:</span>
+                                <strong>@league.CompletedMatchesCount / @league.TotalMatchesCount</strong>
+                            </div>
+                        </div>
+
+                        @{
+                            int percent = league.TotalMatchesCount > 0
+                                ? (int)Math.Round((double)league.CompletedMatchesCount / league.TotalMatchesCount * 100)
+                                : 0;
+                        }
+                        <div class="progress mb-3" style="height: 8px;">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: @percent%;" aria-valuenow="@percent" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white border-top-0 pt-0 pb-3">
+                        <a asp-action="Details" asp-route-id="@league.Id" class="btn btn-outline-success w-100 fw-semibold">
+                            <i class="bi bi-table me-1"></i> Tabela i terminarz
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="col-12">
+            <div class="card card-custom text-center p-5 text-muted">
+                <i class="bi bi-trophy fs-1 mb-2"></i>
+                <h5>Brak utworzonych lig</h5>
+                <p>Nie utworzono jeszcze żadnej ligi bilardowej.</p>
+                @if (User.IsInRole("Admin"))
+                {
+                    <div class="mt-2">
+                        <a asp-action="Create" class="btn btn-success">
+                            <i class="bi bi-plus-circle me-1"></i> Utwórz pierwszą ligę
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>

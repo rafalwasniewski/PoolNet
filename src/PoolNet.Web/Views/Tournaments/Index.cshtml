@@ -1,0 +1,98 @@
+@model List<TournamentSummaryDto>
+@{
+    ViewData["Title"] = "Turnieje Pucharowe";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-diagram-3-fill text-info me-2"></i>Turnieje Pucharowe</h2>
+        <p class="text-muted mb-0">Rozgrywki systemem pucharowym (drabinka pojedynczej eliminacji &ndash; przegrany odpada)</p>
+    </div>
+    @if (User.IsInRole("Admin"))
+    {
+        <a asp-action="Create" class="btn btn-primary fw-semibold">
+            <i class="bi bi-plus-circle me-1"></i> Utwórz turniej pucharowy
+        </a>
+    }
+</div>
+
+<div class="row g-4">
+    @if (Model.Any())
+    {
+        @foreach (var tour in Model)
+        {
+            <div class="col-md-6 col-lg-4">
+                <div class="card card-custom h-100">
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                        <span class="badge @(tour.Status == TournamentStatus.Finished ? "bg-secondary" : "bg-success")">
+                            @(tour.Status == TournamentStatus.Finished ? "Zakończony" : "W toku")
+                        </span>
+                        @if (tour.GameType == BilliardGameType.EightBall)
+                        {
+                            <span class="badge badge-ball-8">Bila 8</span>
+                        }
+                        else if (tour.GameType == BilliardGameType.NineBall)
+                        {
+                            <span class="badge badge-ball-9">Bila 9</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-ball-10">Bila 10</span>
+                        }
+                    </div>
+                    <div class="card-body">
+                        <h4 class="card-title fw-bold">@tour.Name</h4>
+                        <div class="text-muted small mb-3">
+                            Utworzony: @tour.CreatedAt.ToString("dd.MM.yyyy")
+                        </div>
+
+                        <div class="bg-light p-3 rounded mb-3">
+                            <div class="d-flex justify-content-between small mb-1">
+                                <span>Uczestnicy:</span>
+                                <strong>@tour.ParticipantsCount graczy</strong>
+                            </div>
+                            <div class="d-flex justify-content-between small mb-1">
+                                <span>Dystans partii:</span>
+                                <strong>Race to @tour.RaceTo</strong>
+                            </div>
+                            <div class="d-flex justify-content-between small">
+                                <span>Triumfator:</span>
+                                @if (!string.IsNullOrEmpty(tour.WinnerNickname))
+                                {
+                                    <strong class="text-success"><i class="bi bi-trophy-fill text-warning"></i> @tour.WinnerNickname</strong>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Do wyłonienia</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white border-top-0 pt-0 pb-3">
+                        <a asp-action="Details" asp-route-id="@tour.Id" class="btn btn-outline-primary w-100 fw-semibold">
+                            <i class="bi bi-diagram-3 me-1"></i> Otwórz drabinkę turniejową
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="col-12">
+            <div class="card card-custom text-center p-5 text-muted">
+                <i class="bi bi-diagram-3 fs-1 mb-2"></i>
+                <h5>Brak turniejów pucharowych</h5>
+                <p>Nie utworzono jeszcze żadnego turnieju.</p>
+                @if (User.IsInRole("Admin"))
+                {
+                    <div class="mt-2">
+                        <a asp-action="Create" class="btn btn-primary">
+                            <i class="bi bi-plus-circle me-1"></i> Utwórz pierwszy turniej
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>

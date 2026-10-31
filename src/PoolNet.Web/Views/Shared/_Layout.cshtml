@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - PoolNet (Bilard 8, 9, 10)</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <style>
+        :root {
+            --pool-felt: #0b6623;
+            --pool-felt-dark: #084c1a;
+            --pool-ball-8: #111827;
+            --pool-ball-9: #eab308;
+            --pool-ball-10: #2563eb;
+        }
+        .navbar-pool {
+            background-color: #0f172a;
+            border-bottom: 3px solid #10b981;
+        }
+        .badge-ball-8 { background-color: #111827; color: #fff; border: 1px solid #374151; }
+        .badge-ball-9 { background-color: #ca8a04; color: #fff; font-weight: bold; }
+        .badge-ball-10 { background-color: #1d4ed8; color: #fff; }
+        .hero-banner {
+            background: linear-gradient(135deg, #064e3b 0%, #022c22 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .card-custom {
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            transition: transform 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        .card-custom:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        .tournament-node {
+            background: #ffffff;
+            border: 2px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .tournament-node.completed {
+            border-color: #10b981;
+        }
+        .winner-line {
+            font-weight: bold;
+            color: #047857;
+        }
+    </style>
+</head>
+<body class="bg-light d-flex flex-column min-vh-100">
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark navbar-pool py-2 mb-4">
+            <div class="container">
+                <a class="navbar-brand fw-bold fs-4 d-flex align-items-center gap-2" asp-controller="Home" asp-action="Index">
+                    <span style="font-size: 1.5rem;">🎱</span> <span>PoolNet</span>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar" aria-controls="mainNavbar"
+                        aria-expanded="false" aria-label="Przełącz nawigację">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="mainNavbar">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link text-white" asp-controller="Home" asp-action="Index">
+                                <i class="bi bi-house-door me-1"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" asp-controller="Players" asp-action="Index">
+                                <i class="bi bi-people me-1"></i> Gracze
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" asp-controller="Matches" asp-action="Index">
+                                <i class="bi bi-controller me-1"></i> Mecze
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" asp-controller="Leagues" asp-action="Index">
+                                <i class="bi bi-trophy me-1"></i> Ligi
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" asp-controller="Tournaments" asp-action="Index">
+                                <i class="bi bi-diagram-3 me-1"></i> Turnieje
+                            </a>
+                        </li>
+                    </ul>
+
+                    <div class="d-flex align-items-center gap-2">
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <span class="badge bg-success py-2 px-3 d-flex align-items-center gap-1">
+                                <i class="bi bi-shield-lock-fill"></i> Administrator
+                            </span>
+                            <a asp-controller="Account" asp-action="Logout" class="btn btn-outline-light btn-sm">
+                                <i class="bi bi-box-arrow-right"></i> Wyloguj
+                            </a>
+                        }
+                        else
+                        {
+                            <span class="text-secondary small me-2 d-none d-md-inline">
+                                <i class="bi bi-eye"></i> Tryb podglądu (Gość)
+                            </span>
+                            <a asp-controller="Account" asp-action="Login" class="btn btn-warning btn-sm fw-semibold">
+                                <i class="bi bi-key-fill"></i> Zaloguj jako Admin
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container flex-grow-1">
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show d-flex align-items-center gap-2 shadow-sm" role="alert">
+                <i class="bi bi-check-circle-fill fs-5"></i>
+                <div>@TempData["SuccessMessage"]</div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Zamknij"></button>
+            </div>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center gap-2 shadow-sm" role="alert">
+                <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+                <div>@TempData["ErrorMessage"]</div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Zamknij"></button>
+            </div>
+        }
+
+        <main role="main" class="pb-4">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="footer bg-white border-top py-3 text-muted mt-auto">
+        <div class="container d-flex flex-wrap justify-content-between align-items-center small">
+            <div>
+                <strong>PoolNet</strong> &bull; Rejestr meczy bilardowych (odmiany 8, 9, 10) &bull; .NET 10 & SQLite
+            </div>
+            <div>
+                @if (User.IsInRole("Admin"))
+                {
+                    <span class="text-success"><i class="bi bi-check2-circle"></i> Tryb edycji aktywny</span>
+                }
+                else
+                {
+                    <span class="text-secondary"><i class="bi bi-lock"></i> Tryb tylko do odczytu dla gości</span>
+                }
+            </div>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

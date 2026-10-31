@@ -1,0 +1,15 @@
+To ma być aplikacja web zrobiona w dotnet 10
+aplikacja podstawy:
+jest zgodna z SOLID
+musi mieć testy jednostkowe
+używa sqlite jako bazy danych
+jest wykonanan w asp.net mvc
+opis aplikacji:
+- służy do rejestru meczy w bilard odmiana 8,9,10
+- można dodawać nowych graczy
+- gracze mogą rozegrać zesobą mecz towrzyski i jego wynik musi się zapisać, przed grą z góry jest ustalane do ilu wygranych parti jest rozgrywaka
+- można utworzyć turniej na zasadach pucharowych
+- można utworzyć ligę dodać do niej graczy i każdy z każdym musi rozegrać dwa mecze
+- w szczegółach gracza widać listę jego meczy oraz pozycję w ligach lub turniejach oraz statystykę z rozegranych meczów
+- jeden logujący się administrator dodaj wyniki meczów, użytkowników, tworzy ligę lub turnie
+- użytkownicy którzy sie nie logują mają tylko podgląd

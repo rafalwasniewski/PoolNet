@@ -1,0 +1,251 @@
+@model HomeDashboardViewModel
+@{
+    ViewData["Title"] = "Strona główna";
+}
+
+<div class="hero-banner">
+    <div class="row align-items-center">
+        <div class="col-lg-8">
+            <h1 class="display-5 fw-bold mb-2">🎱 PoolNet &ndash; Bilard 8, 9, 10</h1>
+            <p class="lead mb-3 text-white-50">
+                System ewidencji meczy bilardowych, turniejów pucharowych i rozgrywek ligowych (mecz i rewanż).
+            </p>
+            <div class="d-flex flex-wrap gap-2">
+                @if (User.IsInRole("Admin"))
+                {
+                    <a asp-controller="Matches" asp-action="CreateFriendly" class="btn btn-warning fw-semibold">
+                        <i class="bi bi-play-circle-fill me-1"></i> Rozegraj szybki mecz
+                    </a>
+                    <a asp-controller="Leagues" asp-action="Create" class="btn btn-outline-light">
+                        <i class="bi bi-trophy me-1"></i> Utwórz ligę
+                    </a>
+                    <a asp-controller="Tournaments" asp-action="Create" class="btn btn-outline-light">
+                        <i class="bi bi-diagram-3 me-1"></i> Utwórz turniej
+                    </a>
+                    <a asp-controller="Players" asp-action="Create" class="btn btn-outline-light">
+                        <i class="bi bi-person-plus me-1"></i> Dodaj gracza
+                    </a>
+                }
+                else
+                {
+                    <a asp-controller="Players" asp-action="Index" class="btn btn-light fw-semibold">
+                        <i class="bi bi-people me-1"></i> Zobacz graczy i statystyki
+                    </a>
+                    <a asp-controller="Matches" asp-action="Index" class="btn btn-outline-light">
+                        <i class="bi bi-controller me-1"></i> Wyniki meczów
+                    </a>
+                }
+            </div>
+        </div>
+        <div class="col-lg-4 text-center d-none d-lg-block">
+            <div class="p-3 bg-white bg-opacity-10 rounded-3 border border-white border-opacity-25">
+                <div class="fs-1 fw-bold text-warning">@Model.TotalPlayersCount</div>
+                <div class="small text-uppercase tracking-wider">Zarejestrowanych graczy</div>
+                <hr class="my-2 border-white border-opacity-25" />
+                <div class="fs-1 fw-bold text-info">@Model.RecentMatches.Count</div>
+                <div class="small text-uppercase tracking-wider">Ostatnich spotkań</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Top Gracze -->
+    <div class="col-lg-5">
+        <div class="card card-custom h-100">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold"><i class="bi bi-award text-warning me-2"></i>Najlepsi gracze</h5>
+                <a asp-controller="Players" asp-action="Index" class="btn btn-sm btn-outline-secondary">Wszyscy gracze</a>
+            </div>
+            <div class="card-body p-0">
+                @if (Model.TopPlayers.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light small">
+                                <tr>
+                                    <th>Gracz</th>
+                                    <th class="text-center">Mecze</th>
+                                    <th class="text-center">Zwycięstwa</th>
+                                    <th class="text-end">Skuteczność</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var player in Model.TopPlayers)
+                                {
+                                    <tr>
+                                        <td>
+                                            <a asp-controller="Players" asp-action="Details" asp-route-id="@player.Id" class="fw-bold text-decoration-none text-dark">
+                                                <i class="bi bi-person-circle text-primary me-1"></i> @player.Nickname
+                                            </a>
+                                        </td>
+                                        <td class="text-center">@player.TotalMatches</td>
+                                        <td class="text-center"><span class="badge bg-success">@player.Wins</span></td>
+                                        <td class="text-end fw-semibold text-primary">@player.WinRate%</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="p-4 text-center text-muted">
+                        Brak rozegranych meczów w systemie.
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Ostatnie mecze -->
+    <div class="col-lg-7">
+        <div class="card card-custom h-100">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold"><i class="bi bi-clock-history text-primary me-2"></i>Ostatnie mecze</h5>
+                <a asp-controller="Matches" asp-action="Index" class="btn btn-sm btn-outline-secondary">Historia</a>
+            </div>
+            <div class="card-body p-0">
+                @if (Model.RecentMatches.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light small">
+                                <tr>
+                                    <th>Odmiana</th>
+                                    <th>Pojedynek</th>
+                                    <th class="text-center">Wynik</th>
+                                    <th>Typ</th>
+                                    @if (User.IsInRole("Admin"))
+                                    {
+                                        <th class="text-end">Akcja</th>
+                                    }
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var match in Model.RecentMatches)
+                                {
+                                    <tr>
+                                        <td>
+                                            @if (match.GameType == BilliardGameType.EightBall)
+                                            {
+                                                <span class="badge badge-ball-8">Bila 8</span>
+                                            }
+                                            else if (match.GameType == BilliardGameType.NineBall)
+                                            {
+                                                <span class="badge badge-ball-9">Bila 9</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge badge-ball-10">Bila 10</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <span class="@(match.WinnerId == match.Player1Id ? "fw-bold text-success" : "")">@match.Player1Nickname</span>
+                                            <span class="text-muted mx-1">vs</span>
+                                            <span class="@(match.WinnerId == match.Player2Id ? "fw-bold text-success" : "")">@match.Player2Nickname</span>
+                                        </td>
+                                        <td class="text-center">
+                                            @if (match.Status == MatchStatus.Completed)
+                                            {
+                                                <span class="badge bg-dark fs-6">@match.Player1Score : @match.Player2Score</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">Do @match.FirstToWins partii</span>
+                                            }
+                                        </td>
+                                        <td><span class="badge bg-light text-dark border">@match.ContextName</span></td>
+                                        @if (User.IsInRole("Admin"))
+                                        {
+                                            <td class="text-end">
+                                                <a asp-controller="Matches" asp-action="RecordScore" asp-route-id="@match.Id" class="btn btn-sm btn-outline-primary py-0">
+                                                    @(match.Status == MatchStatus.Completed ? "Zmień" : "Wpisz wynik")
+                                                </a>
+                                            </td>
+                                        }
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="p-4 text-center text-muted">
+                        Brak zarejestrowanych meczów.
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ligi i Turnieje -->
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card card-custom">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold"><i class="bi bi-trophy text-success me-2"></i>Aktywne Ligi</h5>
+                <a asp-controller="Leagues" asp-action="Index" class="btn btn-sm btn-outline-secondary">Wszystkie ligi</a>
+            </div>
+            <div class="card-body">
+                @if (Model.ActiveLeagues.Any())
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var league in Model.ActiveLeagues)
+                        {
+                            <a asp-controller="Leagues" asp-action="Details" asp-route-id="@league.Id" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3">
+                                <div>
+                                    <div class="fw-bold">@league.Name</div>
+                                    <small class="text-muted">
+                                        Odmiana: Bila @((int)league.GameType) &bull; Race to: @league.RaceTo &bull; Graczy: @league.ParticipantsCount
+                                    </small>
+                                </div>
+                                <span class="badge bg-primary rounded-pill">
+                                    @league.CompletedMatchesCount / @league.TotalMatchesCount rozegranych
+                                </span>
+                            </a>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted text-center my-3">Brak aktywnych lig w trakcie rozgrywek.</p>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card card-custom">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold"><i class="bi bi-diagram-3 text-info me-2"></i>Aktywne Turnieje</h5>
+                <a asp-controller="Tournaments" asp-action="Index" class="btn btn-sm btn-outline-secondary">Wszystkie turnieje</a>
+            </div>
+            <div class="card-body">
+                @if (Model.ActiveTournaments.Any())
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var tour in Model.ActiveTournaments)
+                        {
+                            <a asp-controller="Tournaments" asp-action="Details" asp-route-id="@tour.Id" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3">
+                                <div>
+                                    <div class="fw-bold">@tour.Name</div>
+                                    <small class="text-muted">
+                                        Drabinka pucharowa &bull; Bila @((int)tour.GameType) &bull; Uczestników: @tour.ParticipantsCount
+                                    </small>
+                                </div>
+                                <span class="badge bg-success rounded-pill">W trakcie</span>
+                            </a>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted text-center my-3">Brak turniejów pucharowych w toku.</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>

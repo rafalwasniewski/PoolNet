@@ -1,0 +1,248 @@
+@model TournamentDetailsDto
+@{
+    ViewData["Title"] = $"Drabinka Turniejowa - {Model.Name}";
+}
+
+<!-- Nagłówek Turnieju -->
+<div class="card card-custom mb-4 bg-white">
+    <div class="card-body p-4 d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge @(Model.Status == TournamentStatus.Finished ? "bg-secondary" : "bg-success")">
+                    @(Model.Status == TournamentStatus.Finished ? "Zakończony" : "W toku")
+                </span>
+                @if (Model.GameType == BilliardGameType.EightBall)
+                {
+                    <span class="badge badge-ball-8">Bila 8 (Ósemka)</span>
+                }
+                else if (Model.GameType == BilliardGameType.NineBall)
+                {
+                    <span class="badge badge-ball-9">Bila 9 (Dziewiątka)</span>
+                }
+                else
+                {
+                    <span class="badge badge-ball-10">Bila 10 (Dziesiątka)</span>
+                }
+                <span class="badge bg-light text-dark border">Race to @Model.RaceTo</span>
+            </div>
+            <h2 class="fw-bold mb-0">@Model.Name</h2>
+            <small class="text-muted">
+                System pucharowy pojedynczej eliminacji &bull; Uczestników: @Model.Participants.Count
+            </small>
+        </div>
+        <div>
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Lista turniejów
+            </a>
+        </div>
+    </div>
+</div>
+
+@if (Model.Status == TournamentStatus.Finished && !string.IsNullOrEmpty(Model.WinnerNickname))
+{
+    <div class="alert alert-warning border-warning shadow-sm d-flex align-items-center justify-content-between p-3 mb-4 rounded-3">
+        <div class="d-flex align-items-center gap-3">
+            <span style="font-size: 2.5rem;">🏆</span>
+            <div>
+                <h4 class="fw-bold mb-0 text-dark">Zwycięzca Turnieju: @Model.WinnerNickname</h4>
+                <div class="small text-muted">Gratulacje dla mistrza rozgrywek pucharowych!</div>
+            </div>
+        </div>
+        <a asp-controller="Players" asp-action="Details" asp-route-id="@Model.WinnerId" class="btn btn-dark btn-sm">
+            Profil mistrza
+        </a>
+    </div>
+}
+
+<!-- Wizualna Drabinka Turniejowa -->
+<div class="card card-custom mb-4">
+    <div class="card-header bg-white py-3">
+        <h5 class="mb-0 fw-bold"><i class="bi bi-diagram-3-fill text-primary me-2"></i>Drabinka Pucharowa</h5>
+    </div>
+    <div class="card-body p-4 overflow-auto">
+        <div class="d-flex gap-4" style="min-width: @(Model.Rounds.Count * 280)px;">
+            @foreach (var round in Model.Rounds)
+            {
+                <div class="d-flex flex-column flex-grow-1" style="min-width: 260px; max-width: 320px;">
+                    <div class="text-center p-2 mb-3 bg-dark text-white rounded fw-bold small text-uppercase tracking-wider">
+                        @round.RoundName
+                    </div>
+
+                    <div class="d-flex flex-column justify-content-around flex-grow-1 gap-3">
+                        @foreach (var match in round.Matches)
+                        {
+                            <div class="tournament-node @(match.IsCompleted ? "completed" : "")">
+                                <div class="d-flex justify-content-between align-items-center small text-muted mb-2 border-bottom pb-1">
+                                    <span>Mecz #@(match.MatchOrder + 1)</span>
+                                    @if (match.IsBye)
+                                    {
+                                        <span class="badge bg-info text-dark">Wolny los</span>
+                                    }
+                                    else if (match.IsCompleted)
+                                    {
+                                        <span class="badge bg-success">Zakończony</span>
+                                    }
+                                    else if (match.Player1Id.HasValue && match.Player2Id.HasValue)
+                                    {
+                                        <span class="badge bg-warning text-dark">Gotowy do gry</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-light text-muted border">Czeka na graczy</span>
+                                    }
+                                </div>
+
+                                <!-- Gracz 1 -->
+                                <div class="d-flex justify-content-between align-items-center py-1 @(match.WinnerId.HasValue && match.WinnerId == match.Player1Id ? "winner-line bg-success bg-opacity-10 rounded px-1" : "")">
+                                    <div class="text-truncate me-2">
+                                        @if (match.Player1Id.HasValue)
+                                        {
+                                            <i class="bi bi-person-fill text-primary me-1"></i>
+                                            <a asp-controller="Players" asp-action="Details" asp-route-id="@match.Player1Id" class="text-decoration-none text-dark fw-medium">
+                                                @match.Player1Nickname
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted fst-italic">TBD</span>
+                                        }
+                                    </div>
+                                    <span class="badge @(match.WinnerId.HasValue && match.WinnerId == match.Player1Id ? "bg-success" : "bg-dark")">
+                                        @match.Player1Score
+                                    </span>
+                                </div>
+
+                                <!-- Gracz 2 -->
+                                <div class="d-flex justify-content-between align-items-center py-1 mt-1 @(match.WinnerId.HasValue && match.WinnerId == match.Player2Id ? "winner-line bg-success bg-opacity-10 rounded px-1" : "")">
+                                    <div class="text-truncate me-2">
+                                        @if (match.IsBye)
+                                        {
+                                            <span class="text-muted small fst-italic">Brak rywala (BYE)</span>
+                                        }
+                                        else if (match.Player2Id.HasValue)
+                                        {
+                                            <i class="bi bi-person-fill text-primary me-1"></i>
+                                            <a asp-controller="Players" asp-action="Details" asp-route-id="@match.Player2Id" class="text-decoration-none text-dark fw-medium">
+                                                @match.Player2Nickname
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted fst-italic">TBD</span>
+                                        }
+                                    </div>
+                                    @if (!match.IsBye)
+                                    {
+                                        <span class="badge @(match.WinnerId.HasValue && match.WinnerId == match.Player2Id ? "bg-success" : "bg-dark")">
+                                            @match.Player2Score
+                                        </span>
+                                    }
+                                </div>
+
+                                <!-- Przycisk wprowadzania wyniku dla Admina -->
+                                @if (User.IsInRole("Admin") && !match.IsBye && match.Player1Id.HasValue && match.Player2Id.HasValue)
+                                {
+                                    <div class="mt-2 pt-2 border-top text-end">
+                                        <button type="button" class="btn btn-sm btn-outline-primary py-0"
+                                                onclick="openTournamentScoreModal('@match.TournamentMatchId', '@match.Player1Nickname', '@match.Player2Nickname', @match.Player1Score, @match.Player2Score, '@round.RoundName')">
+                                            @(match.IsCompleted ? "Zmień wynik" : "Wpisz wynik")
+                                        </button>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Lista uczestników i rozstawienie -->
+<div class="card card-custom">
+    <div class="card-header bg-white py-3">
+        <h5 class="mb-0 fw-bold"><i class="bi bi-people text-secondary me-2"></i>Uczestnicy turnieju i rozstawienie</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light small sticky-top">
+                    <tr>
+                        <th style="width: 80px;" class="text-center">Seed (#)</th>
+                        <th>Pseudonim gracza</th>
+                        <th class="text-end">Profil</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in Model.Participants)
+                    {
+                        <tr>
+                            <td class="text-center fw-bold">#@p.Seed</td>
+                            <td class="fw-semibold">
+                                <i class="bi bi-person-fill text-primary me-1"></i> @p.Nickname
+                            </td>
+                            <td class="text-end">
+                                <a asp-controller="Players" asp-action="Details" asp-route-id="@p.PlayerId" class="btn btn-sm btn-outline-secondary">
+                                    Zobacz profil
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@if (User.IsInRole("Admin"))
+{
+    <!-- Modal do wpisywania wyników meczów pucharowych -->
+    <div class="modal fade" id="tourScoreModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form asp-action="RecordMatchScore" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="tournamentId" value="@Model.Id" />
+                    <input type="hidden" id="modalTourMatchId" name="tournamentMatchId" value="" />
+
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold" id="modalTourRoundTitle">Wprowadź wynik meczu</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zamknij"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <p class="text-muted small">Race to @Model.RaceTo (zwycięzca musi zdobyć dokładnie @Model.RaceTo partii i automatycznie awansuje)</p>
+                        <div class="row align-items-center justify-content-center my-3">
+                            <div class="col-5">
+                                <label id="modalTourP1Name" class="form-label fw-bold"></label>
+                                <input type="number" id="modalTourP1Score" name="player1Score" value="0" min="0" max="@Model.RaceTo" class="form-control form-control-lg text-center fs-3 fw-bold" required />
+                            </div>
+                            <div class="col-2 fs-3 fw-bold text-muted">:</div>
+                            <div class="col-5">
+                                <label id="modalTourP2Name" class="form-label fw-bold"></label>
+                                <input type="number" id="modalTourP2Score" name="player2Score" value="0" min="0" max="@Model.RaceTo" class="form-control form-control-lg text-center fs-3 fw-bold" required />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
+                        <button type="submit" class="btn btn-success fw-semibold">Zapisz i awansuj</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    @section Scripts {
+        <script>
+            function openTournamentScoreModal(matchId, p1Name, p2Name, s1, s2, roundName) {
+                document.getElementById('modalTourMatchId').value = matchId;
+                document.getElementById('modalTourRoundTitle').textContent = 'Wynik meczu: ' + roundName;
+                document.getElementById('modalTourP1Name').textContent = p1Name;
+                document.getElementById('modalTourP2Name').textContent = p2Name;
+                document.getElementById('modalTourP1Score').value = s1;
+                document.getElementById('modalTourP2Score').value = s2;
+                new bootstrap.Modal(document.getElementById('tourScoreModal')).show();
+            }
+        </script>
+    }
+}

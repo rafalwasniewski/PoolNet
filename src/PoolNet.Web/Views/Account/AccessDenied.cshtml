@@ -1,0 +1,25 @@
+@{
+    ViewData["Title"] = "Odmowa dostępu";
+}
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6 text-center">
+        <div class="card card-custom p-5">
+            <div class="text-danger mb-3" style="font-size: 3rem;">
+                <i class="bi bi-shield-x"></i>
+            </div>
+            <h3 class="fw-bold">Brak uprawnień</h3>
+            <p class="text-muted">
+                Ta akcja wymaga uprawnień Administratora. Goście posiadają dostęp wyłącznie do odczytu.
+            </p>
+            <div class="mt-3">
+                <a asp-action="Login" class="btn btn-primary me-2">
+                    <i class="bi bi-key-fill me-1"></i> Zaloguj jako Administrator
+                </a>
+                <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary">
+                    Powrót do strony głównej
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

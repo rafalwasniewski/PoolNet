@@ -1,0 +1,73 @@
+@model CreateFriendlyMatchViewModel
+@{
+    ViewData["Title"] = "Nowy Mecz Towarzyski";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="card card-custom">
+            <div class="card-header bg-white py-3">
+                <h4 class="mb-0 fw-bold"><i class="bi bi-play-circle text-warning me-2"></i>Nowy Mecz Towarzyski</h4>
+                <small class="text-muted">Przed rozpoczęciem gry z góry ustalana jest liczba partii do zwycięstwa (Race to).</small>
+            </div>
+            <div class="card-body p-4">
+                <form asp-action="CreateFriendly" method="post">
+                    @Html.AntiForgeryToken()
+
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="Player1Id" class="form-label fw-semibold"></label>
+                            <select asp-for="Player1Id" asp-items="Model.AvailablePlayers" class="form-select form-select-lg">
+                                <option value="">-- Wybierz Gracza 1 --</option>
+                            </select>
+                            <span asp-validation-for="Player1Id" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Player2Id" class="form-label fw-semibold"></label>
+                            <select asp-for="Player2Id" asp-items="Model.AvailablePlayers" class="form-select form-select-lg">
+                                <option value="">-- Wybierz Gracza 2 --</option>
+                            </select>
+                            <span asp-validation-for="Player2Id" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label asp-for="GameType" class="form-label fw-semibold"></label>
+                            <select asp-for="GameType" class="form-select">
+                                <option value="8">🎱 Bila 8 (Ósemka)</option>
+                                <option value="9">🟡 Bila 9 (Dziewiątka)</option>
+                                <option value="10">🔵 Bila 10 (Dziesiątka)</option>
+                            </select>
+                            <span asp-validation-for="GameType" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="FirstToWins" class="form-label fw-semibold"></label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-flag-fill"></i></span>
+                                <input asp-for="FirstToWins" type="number" min="1" max="50" class="form-control" />
+                            </div>
+                            <span asp-validation-for="FirstToWins" class="text-danger small"></span>
+                            <div class="form-text">np. 5 oznacza mecz "do 5 wygranych partii" (Race to 5).</div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a asp-action="Index" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i> Anuluj
+                        </a>
+                        <button type="submit" class="btn btn-success fw-semibold px-4">
+                            <i class="bi bi-check-lg me-1"></i> Rozpocznij i przejdź do wpisania wyniku
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
