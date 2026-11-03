@@ -2,7 +2,9 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using PoolNet.Web.Models;
 
 namespace PoolNet.Web.Controllers;
@@ -10,10 +12,17 @@ namespace PoolNet.Web.Controllers;
 public class AccountController : Controller
 {
     private readonly IConfiguration _configuration;
+    private readonly IPasswordHasher<string> _passwordHasher;
+    private readonly ILogger<AccountController> _logger;
 
-    public AccountController(IConfiguration configuration)
+    public AccountController(
+        IConfiguration configuration,
+        IPasswordHasher<string> passwordHasher,
+        ILogger<AccountController> logger)
     {
         _configuration = configuration;
+        _passwordHasher = passwordHasher;
+        _logger = logger;
     }
 
     [HttpGet]
@@ -31,6 +40,7 @@ public class AccountController : Controller
     [HttpPost]
     [AllowAnonymous]
     [ValidateAntiForgeryToken]
+    [EnableRateLimiting("login")]
     public async Task<IActionResult> Login(LoginViewModel model)
     {
         if (!ModelState.IsValid)
@@ -39,9 +49,27 @@ public class AccountController : Controller
         }
 
         string expectedUser = _configuration["AdminCredentials:Username"] ?? "admin";
-        string expectedPassword = _configuration["AdminCredentials:Password"] ?? "admin";
+        string? passwordHash = _configuration["AdminCredentials:PasswordHash"];
 
-        if (model.Username == expectedUser && model.Password == expectedPassword)
+        bool credentialsValid = false;
+
+        if (!string.IsNullOrWhiteSpace(passwordHash))
+        {
+            PasswordVerificationResult verification = _passwordHasher.VerifyHashedPassword(
+                expectedUser,
+                passwordHash,
+                model.Password);
+
+            credentialsValid = model.Username == expectedUser
+                && verification != PasswordVerificationResult.Failed;
+        }
+        else
+        {
+            _logger.LogWarning(
+                "AdminCredentials:PasswordHash is not configured. Administrator login is disabled.");
+        }
+
+        if (credentialsValid)
         {
             var claims = new List<Claim>
             {
@@ -75,8 +103,8 @@ public class AccountController : Controller
     }
 
     [HttpPost]
-    [HttpGet]
     [Authorize]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Logout()
     {
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);

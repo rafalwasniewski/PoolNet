@@ -134,4 +134,20 @@ public class MatchTests
         act.Should().Throw<DomainException>()
             .WithMessage("*nie może być ujemny*");
     }
+
+    [Fact]
+    public void RecordResult_WhenResultIsCorrected_PreservesOriginalPlayedAt()
+    {
+        // Arrange
+        var match = new Match(BilliardGameType.EightBall, MatchKind.League, 1, 2, 5);
+        var playedAt = new DateTime(2026, 1, 10, 18, 30, 0, DateTimeKind.Utc);
+        match.RecordResult(5, 2, playedAt);
+
+        // Act
+        match.RecordResult(2, 5);
+
+        // Assert
+        match.WinnerId.Should().Be(2);
+        match.PlayedAt.Should().Be(playedAt);
+    }
 }

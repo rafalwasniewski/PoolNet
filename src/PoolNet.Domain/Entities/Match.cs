@@ -97,6 +97,6 @@ public class Match
         Player2Score = player2Score;
         WinnerId = player1Won ? Player1Id : Player2Id;
         Status = MatchStatus.Completed;
-        PlayedAt = playedAt ?? DateTime.UtcNow;
+        PlayedAt = playedAt ?? PlayedAt ?? DateTime.UtcNow;
     }
 }

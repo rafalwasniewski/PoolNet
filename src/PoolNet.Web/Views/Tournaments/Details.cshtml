@@ -140,11 +140,16 @@
                                 </div>
 
                                 <!-- Przycisk wprowadzania wyniku dla Admina -->
-                                @if (User.IsInRole("Admin") && !match.IsBye && match.Player1Id.HasValue && match.Player2Id.HasValue)
+                                @if (User.IsInRole("Admin") && match.CanEdit)
                                 {
                                     <div class="mt-2 pt-2 border-top text-end">
-                                        <button type="button" class="btn btn-sm btn-outline-primary py-0"
-                                                onclick="openTournamentScoreModal('@match.TournamentMatchId', '@match.Player1Nickname', '@match.Player2Nickname', @match.Player1Score, @match.Player2Score, '@round.RoundName')">
+                                        <button type="button" class="btn btn-sm btn-outline-primary py-0 js-tournament-score"
+                                                data-match-id="@match.TournamentMatchId"
+                                                data-player1="@match.Player1Nickname"
+                                                data-player2="@match.Player2Nickname"
+                                                data-score1="@match.Player1Score"
+                                                data-score2="@match.Player2Score"
+                                                data-round="@round.RoundName">
                                             @(match.IsCompleted ? "Zmień wynik" : "Wpisz wynik")
                                         </button>
                                     </div>
@@ -243,6 +248,18 @@
                 document.getElementById('modalTourP2Score').value = s2;
                 new bootstrap.Modal(document.getElementById('tourScoreModal')).show();
             }
+
+            document.querySelectorAll('.js-tournament-score').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    openTournamentScoreModal(
+                        button.dataset.matchId,
+                        button.dataset.player1,
+                        button.dataset.player2,
+                        button.dataset.score1,
+                        button.dataset.score2,
+                        button.dataset.round);
+                });
+            });
         </script>
     }
 }

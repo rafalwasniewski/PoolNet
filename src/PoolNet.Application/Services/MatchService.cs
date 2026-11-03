@@ -70,6 +70,12 @@ public class MatchService : IMatchService
             throw new DomainException($"Nie znaleziono meczu o ID {dto.MatchId}.");
         }
 
+        if (match.MatchKind != MatchKind.Friendly)
+        {
+            throw new DomainException(
+                "Wynik meczu ligowego lub turniejowego można zmienić wyłącznie w widoku odpowiedniej ligi lub turnieju.");
+        }
+
         match.RecordResult(dto.Player1Score, dto.Player2Score);
         await _db.SaveChangesAsync(cancellationToken);
 

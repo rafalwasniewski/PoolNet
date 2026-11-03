@@ -91,15 +91,22 @@
                                     }
                                     else
                                     {
-                                        <span class="badge bg-light text-muted border">W trakcie</span>
+                                        <span class="badge bg-light text-muted border">Zaplanowany</span>
                                     }
                                 </td>
                                 @if (User.IsInRole("Admin"))
                                 {
                                     <td class="text-end">
-                                        <a asp-action="RecordScore" asp-route-id="@m.Id" class="btn btn-sm btn-outline-primary">
-                                            @(m.Status == MatchStatus.Completed ? "Zmień wynik" : "Wpisz wynik")
-                                        </a>
+                                        @if (m.MatchKind == MatchKind.Friendly)
+                                        {
+                                            <a asp-action="RecordScore" asp-route-id="@m.Id" class="btn btn-sm btn-outline-primary">
+                                                @(m.Status == MatchStatus.Completed ? "Zmień wynik" : "Wpisz wynik")
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">Edytuj w lidze / turnieju</span>
+                                        }
                                     </td>
                                 }
                             </tr>

@@ -140,8 +140,12 @@
 
                                     @if (User.IsInRole("Admin"))
                                     {
-                                        <button type="button" class="btn btn-sm btn-outline-primary ms-2"
-                                                onclick="openLeagueScoreModal('@m.LeagueMatchId', '@m.Player1Nickname', '@m.Player2Nickname', @m.Player1Score, @m.Player2Score)">
+                                        <button type="button" class="btn btn-sm btn-outline-primary ms-2 js-league-score"
+                                                data-match-id="@m.LeagueMatchId"
+                                                data-player1="@m.Player1Nickname"
+                                                data-player2="@m.Player2Nickname"
+                                                data-score1="@m.Player1Score"
+                                                data-score2="@m.Player2Score">
                                             <i class="bi bi-pencil-square"></i>
                                         </button>
                                     }
@@ -203,6 +207,17 @@
                 document.getElementById('modalPlayer2Score').value = s2;
                 new bootstrap.Modal(document.getElementById('leagueScoreModal')).show();
             }
+
+            document.querySelectorAll('.js-league-score').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    openLeagueScoreModal(
+                        button.dataset.matchId,
+                        button.dataset.player1,
+                        button.dataset.player2,
+                        button.dataset.score1,
+                        button.dataset.score2);
+                });
+            });
         </script>
     }
 }

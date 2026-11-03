@@ -10,6 +10,9 @@ services:
       - "8080:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_FORWARDEDHEADERS_ENABLED=true
+      - AdminCredentials__Username=${POOLNET_ADMIN_USERNAME:-admin}
+      - AdminCredentials__PasswordHash=${POOLNET_ADMIN_PASSWORD_HASH:-}
     volumes:
       - poolnet_data:/app/data:Z
 
