@@ -2,21 +2,6 @@ using PoolNet.Domain.Enums;
 
 namespace PoolNet.Application.DTOs;
 
-public class CreateFriendlyMatchDto
-{
-    public int Player1Id { get; set; }
-    public int Player2Id { get; set; }
-    public BilliardGameType GameType { get; set; } = BilliardGameType.EightBall;
-    public int FirstToWins { get; set; } = 5;
-}
-
-public class RecordMatchScoreDto
-{
-    public int MatchId { get; set; }
-    public int Player1Score { get; set; }
-    public int Player2Score { get; set; }
-}
-
 public class MatchDto
 {
     public int Id { get; set; }

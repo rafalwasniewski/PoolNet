@@ -38,6 +38,7 @@ public class CreateFriendlyMatchViewModel
     public int Player2Id { get; set; }
 
     [Required]
+    [EnumDataType(typeof(BilliardGameType), ErrorMessage = "Wybierz prawidłową odmianę bilarda.")]
     [Display(Name = "Odmiana bilarda")]
     public BilliardGameType GameType { get; set; } = BilliardGameType.EightBall;
 
@@ -73,6 +74,7 @@ public class CreateLeagueViewModel
     public string Name { get; set; } = string.Empty;
 
     [Required]
+    [EnumDataType(typeof(BilliardGameType), ErrorMessage = "Wybierz prawidłową odmianę bilarda.")]
     [Display(Name = "Odmiana bilarda")]
     public BilliardGameType GameType { get; set; } = BilliardGameType.EightBall;
 
@@ -95,6 +97,7 @@ public class CreateTournamentViewModel
     public string Name { get; set; } = string.Empty;
 
     [Required]
+    [EnumDataType(typeof(BilliardGameType), ErrorMessage = "Wybierz prawidłową odmianę bilarda.")]
     [Display(Name = "Odmiana bilarda")]
     public BilliardGameType GameType { get; set; } = BilliardGameType.EightBall;
 

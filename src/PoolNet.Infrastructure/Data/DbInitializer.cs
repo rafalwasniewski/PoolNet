@@ -11,24 +11,10 @@ public static class DbInitializer
     {
         await context.Database.EnsureCreatedAsync();
 
-        int existingPlayerCount = await context.Players.CountAsync();
-        if (existingPlayerCount >= 50 && await context.Leagues.CountAsync() >= 3 && await context.Tournaments.CountAsync() >= 3)
-        {
-            return; // Baza już zawiera pełen zestaw danych
-        }
-
-        // Czyścimy ewentualne stare dane testowe, aby zapewnić spójność 50 graczy
+        // Seed uruchamiamy wyłącznie na pustej bazie. Nigdy nie usuwamy istniejących danych.
         if (await context.Players.AnyAsync())
         {
-            context.Matches.RemoveRange(context.Matches);
-            context.TournamentParticipants.RemoveRange(context.TournamentParticipants);
-            context.TournamentMatches.RemoveRange(context.TournamentMatches);
-            context.Tournaments.RemoveRange(context.Tournaments);
-            context.LeagueParticipants.RemoveRange(context.LeagueParticipants);
-            context.LeagueMatches.RemoveRange(context.LeagueMatches);
-            context.Leagues.RemoveRange(context.Leagues);
-            context.Players.RemoveRange(context.Players);
-            await context.SaveChangesAsync();
+            return;
         }
 
         var rand = new Random(42); // Stały seed dla powtarzalności wyników

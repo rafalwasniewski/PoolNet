@@ -1,7 +1,9 @@
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
 using PoolNet.Application.DTOs;
 using PoolNet.Application.Services;
 using PoolNet.Domain.Enums;
+using PoolNet.Domain.Exceptions;
 using PoolNet.UnitTests.Helpers;
 using Xunit;
 
@@ -85,5 +87,81 @@ public class TournamentServiceTests : IDisposable
         finished.Status.Should().Be(TournamentStatus.Finished);
         finished.WinnerId.Should().Be(p1.Id);
         finished.WinnerNickname.Should().Be("P1");
+    }
+
+    [Fact]
+    public async Task RecordTournamentMatchScoreAsync_WhenNextRoundCompleted_BlocksEditingEarlierMatch()
+    {
+        // Arrange
+        var tournament = await CreateFourPlayerTournamentAsync();
+        var semiFinals = tournament.Rounds.Single(r => r.RoundNumber == 1).Matches;
+        var semiFinal = semiFinals[0];
+
+        await _tournamentService.RecordTournamentMatchScoreAsync(semiFinals[0].TournamentMatchId, 5, 0);
+        await _tournamentService.RecordTournamentMatchScoreAsync(semiFinals[1].TournamentMatchId, 5, 0);
+
+        var final = (await _tournamentService.GetTournamentDetailsAsync(tournament.Id))!
+            .Rounds.Single(r => r.RoundNumber == 2).Matches.Single();
+        await _tournamentService.RecordTournamentMatchScoreAsync(final.TournamentMatchId, 5, 1);
+
+        // Act
+        var act = async () => await _tournamentService.RecordTournamentMatchScoreAsync(
+            semiFinal.TournamentMatchId,
+            0,
+            5);
+
+        // Assert
+        await act.Should().ThrowAsync<DomainException>()
+            .WithMessage("*kolejną rundę*");
+
+        var details = await _tournamentService.GetTournamentDetailsAsync(tournament.Id);
+        var completedSemiFinal = details!.Rounds.Single(r => r.RoundNumber == 1)
+            .Matches.Single(m => m.TournamentMatchId == semiFinal.TournamentMatchId);
+
+        completedSemiFinal.CanEdit.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task RecordTournamentMatchScoreAsync_WhenCorrectingSemifinal_UpdatesFinalBracketAndMatch()
+    {
+        // Arrange
+        var tournament = await CreateFourPlayerTournamentAsync();
+        var semiFinals = tournament.Rounds.Single(r => r.RoundNumber == 1).Matches;
+        var semiFinal = semiFinals[0];
+
+        await _tournamentService.RecordTournamentMatchScoreAsync(semiFinals[0].TournamentMatchId, 5, 0);
+        await _tournamentService.RecordTournamentMatchScoreAsync(semiFinals[1].TournamentMatchId, 5, 0);
+
+        var final = (await _tournamentService.GetTournamentDetailsAsync(tournament.Id))!
+            .Rounds.Single(r => r.RoundNumber == 2).Matches.Single();
+        int newWinnerId = semiFinal.Player2Id!.Value;
+
+        // Act - korygujemy wynik pierwszego półfinału, wygrywa drugi gracz
+        await _tournamentService.RecordTournamentMatchScoreAsync(semiFinal.TournamentMatchId, 0, 5);
+
+        // Assert
+        var finalNode = await _context.TournamentMatches
+            .Include(tm => tm.Match)
+            .SingleAsync(tm => tm.Id == final.TournamentMatchId);
+
+        finalNode.Player1Id.Should().Be(newWinnerId);
+        finalNode.Match.Should().NotBeNull();
+        finalNode.Match!.Player1Id.Should().Be(newWinnerId);
+    }
+
+    private async Task<TournamentDetailsDto> CreateFourPlayerTournamentAsync()
+    {
+        var p1 = await _playerService.CreatePlayerAsync(new CreatePlayerDto { Nickname = "P1" });
+        var p2 = await _playerService.CreatePlayerAsync(new CreatePlayerDto { Nickname = "P2" });
+        var p3 = await _playerService.CreatePlayerAsync(new CreatePlayerDto { Nickname = "P3" });
+        var p4 = await _playerService.CreatePlayerAsync(new CreatePlayerDto { Nickname = "P4" });
+
+        return await _tournamentService.CreateTournamentAsync(new CreateTournamentDto
+        {
+            Name = "Turniej Testowy",
+            GameType = BilliardGameType.EightBall,
+            RaceTo = 5,
+            ParticipantPlayerIds = new List<int> { p1.Id, p2.Id, p3.Id, p4.Id }
+        });
     }
 }

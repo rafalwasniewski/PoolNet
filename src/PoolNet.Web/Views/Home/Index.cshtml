@@ -159,9 +159,16 @@
                                         @if (User.IsInRole("Admin"))
                                         {
                                             <td class="text-end">
-                                                <a asp-controller="Matches" asp-action="RecordScore" asp-route-id="@match.Id" class="btn btn-sm btn-outline-primary py-0">
-                                                    @(match.Status == MatchStatus.Completed ? "Zmień" : "Wpisz wynik")
-                                                </a>
+                                                @if (match.MatchKind == MatchKind.Friendly)
+                                                {
+                                                    <a asp-controller="Matches" asp-action="RecordScore" asp-route-id="@match.Id" class="btn btn-sm btn-outline-primary py-0">
+                                                        @(match.Status == MatchStatus.Completed ? "Zmień" : "Wpisz wynik")
+                                                    </a>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted small">Edytuj w lidze / turnieju</span>
+                                                }
                                             </td>
                                         }
                                     </tr>

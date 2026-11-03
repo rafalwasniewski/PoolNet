@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using PoolNet.Application.DTOs;
 using PoolNet.Application.Interfaces;
+using PoolNet.Domain.Enums;
 using PoolNet.Domain.Exceptions;
 using PoolNet.Web.Models;
 
@@ -99,6 +100,12 @@ public class MatchesController : Controller
         if (match == null)
         {
             TempData["ErrorMessage"] = "Nie znaleziono meczu.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (match.MatchKind != MatchKind.Friendly)
+        {
+            TempData["ErrorMessage"] = "Wynik meczu ligowego lub turniejowego można zmienić wyłącznie w widoku odpowiedniej ligi lub turnieju.";
             return RedirectToAction(nameof(Index));
         }
 

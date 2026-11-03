@@ -29,7 +29,8 @@ public class AppDbContext : DbContext, IAppDbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Nickname)
                 .IsRequired()
-                .HasMaxLength(50);
+                .HasMaxLength(50)
+                .UseCollation("NOCASE");
             entity.HasIndex(e => e.Nickname)
                 .IsUnique();
         });

@@ -33,6 +33,7 @@ WORKDIR /app
 # - Store SQLite database in /app/data for easy volume persistence
 ENV ASPNETCORE_HTTP_PORTS=8080 \
     ASPNETCORE_ENVIRONMENT=Production \
+    ASPNETCORE_FORWARDEDHEADERS_ENABLED=true \
     ConnectionStrings__DefaultConnection="Data Source=/app/data/poolnet.db"
 
 # Create /app/data directory and ensure ownership for non-root app user

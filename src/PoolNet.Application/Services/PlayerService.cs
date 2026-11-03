@@ -61,6 +61,7 @@ public class PlayerService : IPlayerService
         var completedMatches = await _db.Matches
             .AsNoTracking()
             .Where(m => m.Status == MatchStatus.Completed && (playerIds.Contains(m.Player1Id) || playerIds.Contains(m.Player2Id)))
+            .Select(m => new { m.Player1Id, m.Player2Id, m.WinnerId })
             .ToListAsync(cancellationToken);
 
         var result = new List<PlayerSummaryDto>();
@@ -162,6 +163,7 @@ public class PlayerService : IPlayerService
         // Ligi gracza
         var playerLeagues = await _db.Leagues
             .AsNoTracking()
+            .AsSplitQuery()
             .Include(l => l.Matches)
                 .ThenInclude(lm => lm.Match)
             .Include(l => l.Participants)
@@ -208,6 +210,7 @@ public class PlayerService : IPlayerService
         // Turnieje gracza
         var playerTournaments = await _db.Tournaments
             .AsNoTracking()
+            .AsSplitQuery()
             .Include(t => t.Matches)
                 .ThenInclude(tm => tm.Match)
             .Include(t => t.Participants)

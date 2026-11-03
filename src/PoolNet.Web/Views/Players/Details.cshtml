@@ -292,9 +292,16 @@
                                 @if (User.IsInRole("Admin"))
                                 {
                                     <td class="text-end">
-                                        <a asp-controller="Matches" asp-action="RecordScore" asp-route-id="@m.MatchId" class="btn btn-sm btn-outline-secondary py-0">
-                                            Popraw wynik
-                                        </a>
+                                        @if (m.MatchKind == MatchKind.Friendly)
+                                        {
+                                            <a asp-controller="Matches" asp-action="RecordScore" asp-route-id="@m.MatchId" class="btn btn-sm btn-outline-secondary py-0">
+                                                Popraw wynik
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">Edytuj w lidze / turnieju</span>
+                                        }
                                     </td>
                                 }
                             </tr>

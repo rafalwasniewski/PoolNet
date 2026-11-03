@@ -141,6 +141,7 @@ public class TournamentService : ITournamentService
     {
         var tournament = await _db.Tournaments
             .AsNoTracking()
+            .AsSplitQuery()
             .Include(t => t.Winner)
             .Include(t => t.Participants)
                 .ThenInclude(p => p.Player)
@@ -191,7 +192,15 @@ public class TournamentService : ITournamentService
                         WinnerId = tm.Match?.WinnerId,
                         IsCompleted = tm.Match?.Status == MatchStatus.Completed,
                         IsBye = tm.IsBye,
-                        NextTournamentMatchId = tm.NextTournamentMatchId
+                        NextTournamentMatchId = tm.NextTournamentMatchId,
+                        CanEdit = !tm.IsBye
+                            && tm.Player1Id.HasValue
+                            && tm.Player2Id.HasValue
+                            && !(tm.Match?.Status == MatchStatus.Completed
+                                && tm.NextTournamentMatchId.HasValue
+                                && tournament.Matches.Any(next =>
+                                    next.Id == tm.NextTournamentMatchId.Value
+                                    && next.Match?.Status == MatchStatus.Completed))
                     }).ToList()
                 };
             }).ToList();
@@ -217,6 +226,7 @@ public class TournamentService : ITournamentService
             .Include(m => m.Tournament)
             .Include(m => m.Match)
             .Include(m => m.NextTournamentMatch)
+                .ThenInclude(n => n!.Match)
             .FirstOrDefaultAsync(m => m.Id == tournamentMatchId, cancellationToken);
 
         if (tm == null || tm.Tournament == null)
@@ -245,15 +255,27 @@ public class TournamentService : ITournamentService
             tm.Match = newMatch;
         }
 
+        // Jeśli zwycięzca tego meczu rozegrał już kolejną rundę, zmiana wyniku wymagałaby
+        // wycofania kolejnych rezultatów. Zamiast doprowadzać do niespójności — blokujemy edycję.
+        if (tm.NextTournamentMatch?.Match?.Status == MatchStatus.Completed)
+        {
+            throw new DomainException(
+                "Nie można zmienić wyniku meczu, ponieważ jego zwycięzca rozegrał już kolejną rundę turnieju.");
+        }
+
         tm.Match.RecordResult(player1Score, player2Score);
         int winnerId = tm.Match.WinnerId!.Value;
 
         // Awans zwycięzcy do kolejnej rundy lub zakończenie turnieju
         if (tm.NextTournamentMatchId.HasValue)
         {
-            var nextTm = await _db.TournamentMatches
-                .Include(m => m.Match)
-                .FirstOrDefaultAsync(m => m.Id == tm.NextTournamentMatchId.Value, cancellationToken);
+            var nextTm = tm.NextTournamentMatch;
+            if (nextTm == null)
+            {
+                nextTm = await _db.TournamentMatches
+                    .Include(m => m.Match)
+                    .FirstOrDefaultAsync(m => m.Id == tm.NextTournamentMatchId.Value, cancellationToken);
+            }
 
             if (nextTm != null)
             {
@@ -266,8 +288,20 @@ public class TournamentService : ITournamentService
                     nextTm.Player2Id = winnerId;
                 }
 
+                // Utrzymujemy zgodność encji Match z węzłem drabinki także przy poprawianiu wyniku.
+                if (nextTm.Match != null)
+                {
+                    if (tm.NextMatchSlot == 1)
+                    {
+                        nextTm.Match.Player1Id = winnerId;
+                    }
+                    else
+                    {
+                        nextTm.Match.Player2Id = winnerId;
+                    }
+                }
                 // Jeśli w następnym meczu obaj gracze są już znani i mecz nie ma jeszcze przypisanego Match, utwórz go
-                if (nextTm.Player1Id.HasValue && nextTm.Player2Id.HasValue && nextTm.MatchId == null)
+                else if (nextTm.Player1Id.HasValue && nextTm.Player2Id.HasValue && nextTm.MatchId == null)
                 {
                     var subsequentMatch = new Match(
                         tm.Tournament.GameType,
@@ -279,6 +313,7 @@ public class TournamentService : ITournamentService
                     _db.Matches.Add(subsequentMatch);
                     await _db.SaveChangesAsync(cancellationToken);
                     nextTm.MatchId = subsequentMatch.Id;
+                    nextTm.Match = subsequentMatch;
                 }
             }
         }

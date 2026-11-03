@@ -87,19 +87,11 @@ public class LeagueService : ILeagueService
 
     public async Task<List<LeagueSummaryDto>> GetAllLeaguesAsync(CancellationToken cancellationToken = default)
     {
-        var leagues = await _db.Leagues
+        // Agregaty liczone po stronie bazy — nie ładujemy tysięcy encji Match tylko po to, by policzyć postęp.
+        return await _db.Leagues
             .AsNoTracking()
-            .Include(l => l.Participants)
-            .Include(l => l.Matches)
-                .ThenInclude(lm => lm.Match)
             .OrderByDescending(l => l.CreatedAt)
-            .ToListAsync(cancellationToken);
-
-        return leagues.Select(l =>
-        {
-            int total = l.Matches.Count;
-            int completed = l.Matches.Count(m => m.Match != null && m.Match.Status == MatchStatus.Completed);
-            return new LeagueSummaryDto
+            .Select(l => new LeagueSummaryDto
             {
                 Id = l.Id,
                 Name = l.Name,
@@ -108,16 +100,18 @@ public class LeagueService : ILeagueService
                 Status = l.Status,
                 CreatedAt = l.CreatedAt,
                 ParticipantsCount = l.Participants.Count,
-                TotalMatchesCount = total,
-                CompletedMatchesCount = completed
-            };
-        }).ToList();
+                TotalMatchesCount = l.Matches.Count,
+                CompletedMatchesCount = l.Matches.Count(m =>
+                    m.Match != null && m.Match.Status == MatchStatus.Completed)
+            })
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<LeagueDetailsDto?> GetLeagueDetailsAsync(int id, CancellationToken cancellationToken = default)
     {
         var league = await _db.Leagues
             .AsNoTracking()
+            .AsSplitQuery()
             .Include(l => l.Participants)
                 .ThenInclude(p => p.Player)
             .Include(l => l.Matches)
