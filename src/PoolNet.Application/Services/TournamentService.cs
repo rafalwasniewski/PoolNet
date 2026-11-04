@@ -189,10 +189,11 @@ public class TournamentService : ITournamentService
                         Player2Nickname = tm.Player2?.Nickname,
                         Player1Score = tm.Match?.Player1Score ?? 0,
                         Player2Score = tm.Match?.Player2Score ?? 0,
-                        WinnerId = tm.Match?.WinnerId,
-                        IsCompleted = tm.Match?.Status == MatchStatus.Completed,
+                        WinnerId = tm.IsBye ? tm.Player1Id : tm.Match?.WinnerId,
+                        IsCompleted = tm.IsBye || tm.Match?.Status == MatchStatus.Completed,
                         IsBye = tm.IsBye,
                         NextTournamentMatchId = tm.NextTournamentMatchId,
+                        NextMatchSlot = tm.NextMatchSlot,
                         CanEdit = !tm.IsBye
                             && tm.Player1Id.HasValue
                             && tm.Player2Id.HasValue

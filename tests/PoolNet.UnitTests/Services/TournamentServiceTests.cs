@@ -149,6 +149,53 @@ public class TournamentServiceTests : IDisposable
         finalNode.Match!.Player1Id.Should().Be(newWinnerId);
     }
 
+    [Fact]
+    public async Task GetTournamentDetailsAsync_PopulatesNextMatchSlotAndWinnerNickname()
+    {
+        // Arrange
+        var tournament = await CreateFourPlayerTournamentAsync();
+        var semi = tournament.Rounds.Single(r => r.RoundNumber == 1).Matches[0];
+
+        // Act
+        var updated = await _tournamentService.RecordTournamentMatchScoreAsync(semi.TournamentMatchId, 5, 2);
+
+        // Assert
+        var round1 = updated.Rounds.Single(r => r.RoundNumber == 1);
+        var semi0 = round1.Matches[0];
+        var semi1 = round1.Matches[1];
+
+        semi0.NextMatchSlot.Should().Be(1);
+        semi1.NextMatchSlot.Should().Be(2);
+        semi0.IsCompleted.Should().BeTrue();
+        semi0.WinnerNickname.Should().Be(semi0.Player1Nickname);
+    }
+
+    [Fact]
+    public async Task GetTournamentDetailsAsync_WhenMatchIsBye_MarksAsCompletedAndWinnerIsPlayer1()
+    {
+        // Arrange
+        var p1 = await _playerService.CreatePlayerAsync(new CreatePlayerDto { Nickname = "P1" });
+        var p2 = await _playerService.CreatePlayerAsync(new CreatePlayerDto { Nickname = "P2" });
+        var p3 = await _playerService.CreatePlayerAsync(new CreatePlayerDto { Nickname = "P3" });
+
+        // Act - 3 players means 1 bye in round 1
+        var tournament = await _tournamentService.CreateTournamentAsync(new CreateTournamentDto
+        {
+            Name = "Turniej 3 Graczy",
+            GameType = BilliardGameType.NineBall,
+            RaceTo = 5,
+            ParticipantPlayerIds = new List<int> { p1.Id, p2.Id, p3.Id }
+        });
+
+        var byeMatch = tournament.Rounds.Single(r => r.RoundNumber == 1).Matches.Single(m => m.IsBye);
+
+        // Assert
+        byeMatch.IsCompleted.Should().BeTrue();
+        byeMatch.WinnerId.Should().Be(byeMatch.Player1Id);
+        byeMatch.WinnerNickname.Should().Be(byeMatch.Player1Nickname);
+        byeMatch.NextMatchSlot.Should().NotBeNull();
+    }
+
     private async Task<TournamentDetailsDto> CreateFourPlayerTournamentAsync()
     {
         var p1 = await _playerService.CreatePlayerAsync(new CreatePlayerDto { Nickname = "P1" });

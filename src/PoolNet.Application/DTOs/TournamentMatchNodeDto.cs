@@ -16,4 +16,8 @@ public class TournamentMatchNodeDto
     public bool IsBye { get; set; }
     public bool CanEdit { get; set; }
     public int? NextTournamentMatchId { get; set; }
+    public int? NextMatchSlot { get; set; }
+    public string? WinnerNickname => WinnerId.HasValue
+        ? (WinnerId == Player1Id ? Player1Nickname : (WinnerId == Player2Id ? Player2Nickname : null))
+        : null;
 }
