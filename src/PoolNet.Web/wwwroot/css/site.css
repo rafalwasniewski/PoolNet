@@ -29,3 +29,156 @@ body {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
 }
+
+/* ==========================================================================
+   Tournament Bracket & Match Connections Styles
+   ========================================================================== */
+
+.tournament-bracket-wrapper {
+  position: relative;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+}
+
+.tournament-bracket-stage {
+  position: relative;
+  display: inline-flex;
+  min-height: 100%;
+  padding: 10px 0;
+}
+
+.tournament-bracket-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+  overflow: visible;
+}
+
+.tournament-column {
+  display: flex;
+  flex-direction: column;
+  width: 280px;
+  min-width: 280px;
+  max-width: 280px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+}
+
+.tournament-node {
+  background: #ffffff;
+  border: 2px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 10px 0;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  position: relative;
+  z-index: 2;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.tournament-node:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.1);
+  border-color: #94a3b8;
+}
+
+.tournament-node.completed {
+  border-color: #10b981;
+}
+
+.tournament-node.completed:hover {
+  border-color: #059669;
+}
+
+.tournament-slot {
+  border-radius: 6px;
+  padding: 5px 8px;
+  transition: all 0.15s ease;
+  border: 1px solid transparent;
+}
+
+.tournament-slot.winner-slot {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.35);
+  font-weight: 600;
+  color: #065f46;
+}
+
+.tournament-slot.loser-slot {
+  opacity: 0.55;
+  color: #64748b;
+}
+
+.tournament-slot.loser-slot a {
+  color: #64748b !important;
+}
+
+.badge-advance {
+  background-color: #10b981;
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.badge-bye {
+  background-color: #0284c7;
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.tournament-champion-node {
+  background: linear-gradient(135deg, #ffffff 0%, #fef3c7 100%);
+  border: 2px solid #f59e0b;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);
+}
+
+/* SVG Line Classes */
+.bracket-line-base {
+  transition: stroke 0.2s ease, stroke-width 0.2s ease;
+}
+
+.bracket-line-winner {
+  stroke: #10b981 !important;
+  stroke-width: 3px !important;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  transition: stroke-width 0.2s ease;
+}
+
+.bracket-line-champion {
+  stroke: #f59e0b !important;
+  stroke-width: 3.5px !important;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  transition: stroke-width 0.2s ease;
+}
+
+.bracket-line-highlight {
+  stroke: #047857 !important;
+  stroke-width: 4.5px !important;
+  filter: drop-shadow(0 0 5px rgba(16, 185, 129, 0.7)) !important;
+}
