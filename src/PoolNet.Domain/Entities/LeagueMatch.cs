@@ -8,12 +8,12 @@ public class LeagueMatch
     public League? League { get; set; }
 
     /// <summary>
-    /// Numer kolejki ligowej
+    /// League round/fixture number
     /// </summary>
     public int RoundNumber { get; set; }
 
     /// <summary>
-    /// Runda: 1 = Pierwszy mecz, 2 = Rewanż
+    /// Leg: 1 = First leg, 2 = Rematch / Return leg
     /// </summary>
     public int Leg { get; set; }
 

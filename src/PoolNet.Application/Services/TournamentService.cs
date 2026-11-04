@@ -48,7 +48,7 @@ public class TournamentService : ITournamentService
         _db.Tournaments.Add(tournament);
         await _db.SaveChangesAsync(cancellationToken);
 
-        // Dodaj uczestników z rozstawieniem
+        // Add participants with seeding
         var participantIds = dto.ParticipantPlayerIds.Distinct().ToList();
         for (int i = 0; i < participantIds.Count; i++)
         {
@@ -61,13 +61,13 @@ public class TournamentService : ITournamentService
         }
         await _db.SaveChangesAsync(cancellationToken);
 
-        // Wygeneruj strukturę drabinki
+        // Generate bracket structure
         var bracketNodes = _bracketGenerator.GenerateBracket(participantIds);
 
-        // Słownik do mapowania TempId na utworzone encje TournamentMatch
+        // Dictionary mapping TempId to created TournamentMatch entities
         var createdEntities = new Dictionary<int, TournamentMatch>();
 
-        // Krok 1: Tworzenie wszystkich encji TournamentMatch
+        // Step 1: Create all TournamentMatch entities
         foreach (var node in bracketNodes)
         {
             var tm = new TournamentMatch
@@ -87,7 +87,7 @@ public class TournamentService : ITournamentService
 
         await _db.SaveChangesAsync(cancellationToken);
 
-        // Krok 2: Powiązanie NextTournamentMatchId oraz utworzenie meczów (Match) dla gotowych par w rundzie 1 (lub kolejnych jeśli bye)
+        // Step 2: Link NextTournamentMatchId and create Match entities for ready pairings in round 1 (or subsequent rounds in case of byes)
         foreach (var node in bracketNodes)
         {
             var tm = createdEntities[node.TempId];
@@ -96,7 +96,7 @@ public class TournamentService : ITournamentService
                 tm.NextTournamentMatchId = nextEntity.Id;
             }
 
-            // Jeśli mecz ma obu graczy i nie jest wolnym losem, stwórz mecz bilardowy
+            // If match has both players and is not a bye, create a pool Match
             if (tm.Player1Id.HasValue && tm.Player2Id.HasValue && !tm.IsBye && tm.MatchId == null)
             {
                 var match = new Match(
@@ -241,7 +241,7 @@ public class TournamentService : ITournamentService
                 throw new DomainException("Mecz nie ma jeszcze skompletowanych obu graczy.");
             }
 
-            // Utwórz mecz jeśli nie istniał
+            // Create match if it did not exist yet
             var newMatch = new Match(
                 tm.Tournament.GameType,
                 MatchKind.Tournament,
@@ -255,8 +255,8 @@ public class TournamentService : ITournamentService
             tm.Match = newMatch;
         }
 
-        // Jeśli zwycięzca tego meczu rozegrał już kolejną rundę, zmiana wyniku wymagałaby
-        // wycofania kolejnych rezultatów. Zamiast doprowadzać do niespójności — blokujemy edycję.
+        // If the winner of this match has already played the next round, changing the score
+        // would require rolling back subsequent results. To avoid inconsistency, editing is blocked.
         if (tm.NextTournamentMatch?.Match?.Status == MatchStatus.Completed)
         {
             throw new DomainException(
@@ -266,7 +266,7 @@ public class TournamentService : ITournamentService
         tm.Match.RecordResult(player1Score, player2Score);
         int winnerId = tm.Match.WinnerId!.Value;
 
-        // Awans zwycięzcy do kolejnej rundy lub zakończenie turnieju
+        // Advance winner to the next round or complete the tournament
         if (tm.NextTournamentMatchId.HasValue)
         {
             var nextTm = tm.NextTournamentMatch;
@@ -288,7 +288,7 @@ public class TournamentService : ITournamentService
                     nextTm.Player2Id = winnerId;
                 }
 
-                // Utrzymujemy zgodność encji Match z węzłem drabinki także przy poprawianiu wyniku.
+                // Maintain Match entity consistency with bracket node even when correcting a score.
                 if (nextTm.Match != null)
                 {
                     if (tm.NextMatchSlot == 1)
@@ -300,7 +300,7 @@ public class TournamentService : ITournamentService
                         nextTm.Match.Player2Id = winnerId;
                     }
                 }
-                // Jeśli w następnym meczu obaj gracze są już znani i mecz nie ma jeszcze przypisanego Match, utwórz go
+                // If both players are now determined in the next match and no Match is assigned yet, create one
                 else if (nextTm.Player1Id.HasValue && nextTm.Player2Id.HasValue && nextTm.MatchId == null)
                 {
                     var subsequentMatch = new Match(
@@ -319,7 +319,7 @@ public class TournamentService : ITournamentService
         }
         else
         {
-            // Brak kolejnego meczu = był to FINAŁ!
+            // No next match = this was the FINAL!
             tm.Tournament.FinishTournament(winnerId);
         }
 

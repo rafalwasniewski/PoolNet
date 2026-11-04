@@ -11,11 +11,16 @@ public class LeagueService : ILeagueService
 {
     private readonly IAppDbContext _db;
     private readonly ILeagueScheduleGenerator _scheduleGenerator;
+    private readonly ILeagueStandingsCalculator _standingsCalculator;
 
-    public LeagueService(IAppDbContext db, ILeagueScheduleGenerator scheduleGenerator)
+    public LeagueService(
+        IAppDbContext db,
+        ILeagueScheduleGenerator scheduleGenerator,
+        ILeagueStandingsCalculator standingsCalculator)
     {
         _db = db;
         _scheduleGenerator = scheduleGenerator;
+        _standingsCalculator = standingsCalculator;
     }
 
     public async Task<LeagueDetailsDto> CreateLeagueAsync(CreateLeagueDto dto, CancellationToken cancellationToken = default)
@@ -48,7 +53,7 @@ public class LeagueService : ILeagueService
         _db.Leagues.Add(league);
         await _db.SaveChangesAsync(cancellationToken);
 
-        // Dodaj uczestników
+        // Add participants
         foreach (var playerId in dto.ParticipantPlayerIds.Distinct())
         {
             _db.LeagueParticipants.Add(new LeagueParticipant
@@ -58,7 +63,7 @@ public class LeagueService : ILeagueService
             });
         }
 
-        // Wygeneruj terminarz mecz i rewanż
+        // Generate double round-robin schedule (home & away)
         var pairings = _scheduleGenerator.GenerateDoubleRoundRobin(dto.ParticipantPlayerIds.Distinct().ToList());
 
         foreach (var pairing in pairings)
@@ -87,7 +92,7 @@ public class LeagueService : ILeagueService
 
     public async Task<List<LeagueSummaryDto>> GetAllLeaguesAsync(CancellationToken cancellationToken = default)
     {
-        // Agregaty liczone po stronie bazy — nie ładujemy tysięcy encji Match tylko po to, by policzyć postęp.
+        // Aggregations computed at database level to avoid loading all Match entities into memory.
         return await _db.Leagues
             .AsNoTracking()
             .OrderByDescending(l => l.CreatedAt)
@@ -124,50 +129,10 @@ public class LeagueService : ILeagueService
 
         if (league == null) return null;
 
-        var allMatches = league.Matches.Select(m => m.Match).Where(m => m != null).ToList();
+        var allMatches = league.Matches.Select(m => m.Match).Where(m => m != null)!;
+        var standings = _standingsCalculator.CalculateStandings(league.Participants, allMatches!);
 
-        // Obliczanie tabeli ligowej
-        var standings = new List<LeagueStandingDto>();
-        foreach (var participant in league.Participants)
-        {
-            if (participant.Player == null) continue;
-
-            int pId = participant.PlayerId;
-            var playerMatches = allMatches.Where(m => (m!.Player1Id == pId || m.Player2Id == pId) && m.Status == MatchStatus.Completed).ToList();
-
-            int wins = playerMatches.Count(m => m!.WinnerId == pId);
-            int losses = playerMatches.Count - wins;
-            int framesWon = playerMatches.Sum(m => m!.Player1Id == pId ? m.Player1Score : m.Player2Score);
-            int framesLost = playerMatches.Sum(m => m!.Player1Id == pId ? m.Player2Score : m.Player1Score);
-            int points = wins * 3;
-
-            standings.Add(new LeagueStandingDto
-            {
-                PlayerId = pId,
-                Nickname = participant.Player.Nickname,
-                MatchesPlayed = playerMatches.Count,
-                Wins = wins,
-                Losses = losses,
-                FramesWon = framesWon,
-                FramesLost = framesLost,
-                Points = points
-            });
-        }
-
-        // Sortowanie: Punkty DESC, Różnica partii DESC, Partie zdobyte DESC, Nick ASC
-        standings = standings
-            .OrderByDescending(s => s.Points)
-            .ThenByDescending(s => s.FrameDifference)
-            .ThenByDescending(s => s.FramesWon)
-            .ThenBy(s => s.Nickname)
-            .ToList();
-
-        for (int i = 0; i < standings.Count; i++)
-        {
-            standings[i].Position = i + 1;
-        }
-
-        // Grupowanie meczów według rund/kolejek
+        // Group matches by round and leg
         var rounds = league.Matches
             .GroupBy(m => new { m.RoundNumber, m.Leg })
             .OrderBy(g => g.Key.RoundNumber)

@@ -11,15 +11,15 @@ public static class DbInitializer
     {
         await context.Database.EnsureCreatedAsync();
 
-        // Seed uruchamiamy wyłącznie na pustej bazie. Nigdy nie usuwamy istniejących danych.
+        // Run seed only on an empty database. Never delete existing data.
         if (await context.Players.AnyAsync())
         {
             return;
         }
 
-        var rand = new Random(42); // Stały seed dla powtarzalności wyników
+        var rand = new Random(42); // Fixed seed for reproducible demo data
 
-        // 1. Dodanie 50 graczy (tylko unikalne pseudonimy)
+        // 1. Add 50 players (unique nicknames only)
         var nicknames = new List<string>
         {
             "Efren Reyes", "Ronnie O'Sullivan", "Shane Van Boening", "Joshua Filler", "Francisco Bustamante",
@@ -45,7 +45,7 @@ public static class DbInitializer
 
         var playerIds = players.Select(p => p.Id).ToList();
 
-        // 2. Generowanie 3 Lig Bilardowych (każdy z 50 graczy uczestniczy w każdej z nich)
+        // 2. Generate 3 billiard leagues (all 50 players participate in each)
         var leagueConfigs = new[]
         {
             ("Ekstraklasa Ósemki", BilliardGameType.EightBall, 5),
@@ -61,7 +61,7 @@ public static class DbInitializer
             context.Leagues.Add(league);
             await context.SaveChangesAsync();
 
-            // Przypisanie wszystkich 50 graczy do ligi
+            // Assign all 50 players to the league
             foreach (var pid in playerIds)
             {
                 context.LeagueParticipants.Add(new LeagueParticipant
@@ -71,7 +71,7 @@ public static class DbInitializer
                 });
             }
 
-            // Generowanie terminarza: mecz i rewanż każdy z każdym (50 * 49 = 2450 meczów)
+            // Generate schedule: double round-robin home & away (50 * 49 = 2450 matches)
             var pairings = scheduleGenerator.GenerateDoubleRoundRobin(playerIds);
 
             var leagueMatches = new List<LeagueMatch>(pairings.Count);
@@ -79,7 +79,7 @@ public static class DbInitializer
             {
                 var match = new Match(gameType, MatchKind.League, p.Player1Id, p.Player2Id, raceTo);
 
-                // Rozegranie meczu ligowego z losowym, realistycznym wynikiem bilardowym
+                // Simulate league match with realistic pool score
                 var (s1, s2) = GenerateScore(raceTo, rand);
                 var matchDate = DateTime.UtcNow.AddDays(-rand.Next(1, 90));
                 match.RecordResult(s1, s2, matchDate);
@@ -98,7 +98,7 @@ public static class DbInitializer
             await context.SaveChangesAsync();
         }
 
-        // 3. Generowanie 3 Turniejów Pucharowych (każdy z 50 graczy uczestniczy w każdym z nich)
+        // 3. Generate 3 knockout tournaments (all 50 players participate in each)
         var tournamentConfigs = new[]
         {
             ("Puchar Polski w Ósemkę", BilliardGameType.EightBall, 5),
@@ -114,7 +114,7 @@ public static class DbInitializer
             context.Tournaments.Add(tournament);
             await context.SaveChangesAsync();
 
-            // Rozstawienie wszystkich 50 graczy
+            // Seed all 50 players
             for (int i = 0; i < playerIds.Count; i++)
             {
                 context.TournamentParticipants.Add(new TournamentParticipant
@@ -126,7 +126,7 @@ public static class DbInitializer
             }
             await context.SaveChangesAsync();
 
-            // Generowanie drabinki turniejowej
+            // Generate tournament bracket
             var bracketNodes = bracketGenerator.GenerateBracket(playerIds);
 
             var createdMap = new Dictionary<int, TournamentMatch>();
@@ -147,7 +147,7 @@ public static class DbInitializer
             }
             await context.SaveChangesAsync();
 
-            // Powiązanie kolejnych meczów w drabince
+            // Link next matches in the bracket
             foreach (var node in bracketNodes)
             {
                 var tm = createdMap[node.TempId];
@@ -158,7 +158,7 @@ public static class DbInitializer
             }
             await context.SaveChangesAsync();
 
-            // Symulacja rozegrania całego turnieju od rundy 1 do finału
+            // Simulate playing the entire tournament from round 1 to the final
             int maxRound = bracketNodes.Max(b => b.RoundNumber);
 
             for (int r = 1; r <= maxRound; r++)
@@ -169,7 +169,7 @@ public static class DbInitializer
                 {
                     if (tm.IsBye)
                     {
-                        // Gracz z wolnym losem awansuje automatycznie
+                        // Player with a bye advances automatically
                         int advancingPlayerId = tm.Player1Id!.Value;
                         if (tm.NextTournamentMatchId.HasValue)
                         {
@@ -200,7 +200,7 @@ public static class DbInitializer
                         }
                         else
                         {
-                            // Finał! Wyłonienie mistrza turnieju
+                            // Final! Determine tournament champion
                             tournament.FinishTournament(winnerId);
                         }
                     }

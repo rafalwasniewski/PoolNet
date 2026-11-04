@@ -10,6 +10,7 @@ public static class DependencyInjection
     {
         services.AddScoped<IPlayerStatisticsCalculator, PlayerStatisticsCalculator>();
         services.AddScoped<ILeagueScheduleGenerator, LeagueScheduleGenerator>();
+        services.AddScoped<ILeagueStandingsCalculator, LeagueStandingsCalculator>();
         services.AddScoped<ITournamentBracketGenerator, TournamentBracketGenerator>();
 
         services.AddScoped<IPlayerService, PlayerService>();

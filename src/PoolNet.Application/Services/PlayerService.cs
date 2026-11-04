@@ -11,11 +11,16 @@ public class PlayerService : IPlayerService
 {
     private readonly IAppDbContext _db;
     private readonly IPlayerStatisticsCalculator _statisticsCalculator;
+    private readonly ILeagueStandingsCalculator _standingsCalculator;
 
-    public PlayerService(IAppDbContext db, IPlayerStatisticsCalculator statisticsCalculator)
+    public PlayerService(
+        IAppDbContext db,
+        IPlayerStatisticsCalculator statisticsCalculator,
+        ILeagueStandingsCalculator standingsCalculator)
     {
         _db = db;
         _statisticsCalculator = statisticsCalculator;
+        _standingsCalculator = standingsCalculator;
     }
 
     public async Task<PlayerSummaryDto> CreatePlayerAsync(CreatePlayerDto dto, CancellationToken cancellationToken = default)
@@ -107,7 +112,7 @@ public class PlayerService : IPlayerService
             .OrderByDescending(m => m.PlayedAt ?? DateTime.MinValue)
             .ToListAsync(cancellationToken);
 
-        // Znajdź powiązania meczów z ligami i turniejami
+        // Find match associations with leagues and tournaments
         var matchIds = matches.Select(m => m.Id).ToList();
 
         var leagueMatches = await _db.LeagueMatches
@@ -160,39 +165,23 @@ public class PlayerService : IPlayerService
         var overallStats = _statisticsCalculator.CalculateOverall(id, matches);
         var statsPerGameType = _statisticsCalculator.CalculatePerGameType(id, matches);
 
-        // Ligi gracza
+        // Player leagues
         var playerLeagues = await _db.Leagues
             .AsNoTracking()
             .AsSplitQuery()
             .Include(l => l.Matches)
                 .ThenInclude(lm => lm.Match)
             .Include(l => l.Participants)
+                .ThenInclude(p => p.Player)
             .Where(l => l.Participants.Any(p => p.PlayerId == id))
             .ToListAsync(cancellationToken);
 
         var leaguesDto = new List<PlayerLeagueParticipationDto>();
         foreach (var league in playerLeagues)
         {
-            // Oblicz pozycję gracza w lidze
-            var leagueMatchesAll = league.Matches.Select(m => m.Match).Where(m => m != null && m.Status == MatchStatus.Completed).ToList();
-            var participantIds = league.Participants.Select(p => p.PlayerId).ToList();
-
-            var scores = participantIds.Select(pid =>
-            {
-                var pMatches = leagueMatchesAll.Where(m => m!.Player1Id == pid || m.Player2Id == pid).ToList();
-                int wins = pMatches.Count(m => m!.WinnerId == pid);
-                int framesWon = pMatches.Sum(m => m!.Player1Id == pid ? m.Player1Score : m.Player2Score);
-                int framesLost = pMatches.Sum(m => m!.Player1Id == pid ? m.Player2Score : m.Player1Score);
-                int pts = wins * 3;
-                return new { PlayerId = pid, Points = pts, FrameDiff = framesWon - framesLost, FramesWon = framesWon, Played = pMatches.Count };
-            })
-            .OrderByDescending(x => x.Points)
-            .ThenByDescending(x => x.FrameDiff)
-            .ThenByDescending(x => x.FramesWon)
-            .ToList();
-
-            int position = scores.FindIndex(x => x.PlayerId == id) + 1;
-            var myScore = scores.FirstOrDefault(x => x.PlayerId == id);
+            var allMatches = league.Matches.Select(m => m.Match).Where(m => m != null)!;
+            var standings = _standingsCalculator.CalculateStandings(league.Participants, allMatches!);
+            var myStanding = standings.FirstOrDefault(s => s.PlayerId == id);
 
             leaguesDto.Add(new PlayerLeagueParticipationDto
             {
@@ -200,14 +189,14 @@ public class PlayerService : IPlayerService
                 LeagueName = league.Name,
                 GameType = league.GameType,
                 Status = league.Status,
-                Position = position > 0 ? position : 1,
-                TotalParticipants = participantIds.Count,
-                Points = myScore?.Points ?? 0,
-                MatchesPlayed = myScore?.Played ?? 0
+                Position = myStanding?.Position ?? 1,
+                TotalParticipants = league.Participants.Count,
+                Points = myStanding?.Points ?? 0,
+                MatchesPlayed = myStanding?.MatchesPlayed ?? 0
             });
         }
 
-        // Turnieje gracza
+        // Player tournaments
         var playerTournaments = await _db.Tournaments
             .AsNoTracking()
             .AsSplitQuery()
@@ -227,7 +216,7 @@ public class PlayerService : IPlayerService
             }
             else if (tournament.Status == TournamentStatus.Finished)
             {
-                // Sprawdź w której rundzie odpadł
+                // Check which round the player was eliminated in
                 var myLoss = tournament.Matches
                     .Where(tm => (tm.Player1Id == id || tm.Player2Id == id) && tm.Match != null && tm.Match.Status == MatchStatus.Completed && tm.Match.WinnerId != id)
                     .OrderByDescending(tm => tm.RoundNumber)

@@ -27,13 +27,13 @@ public class TournamentBracketGenerator : ITournamentBracketGenerator
 
         int totalRounds = (int)Math.Log2(powerOfTwo);
 
-        // Tworzymy strukturę meczów runda po rundzie
+        // Build the match structure round by round
         var allNodes = new List<BracketNodeDefinition>();
         var roundsNodes = new Dictionary<int, List<BracketNodeDefinition>>();
 
         int currentTempId = 1;
 
-        // Generujemy puste węzły dla każdej rundy
+        // Generate placeholder nodes for each round
         for (int r = 1; r <= totalRounds; r++)
         {
             int matchesInRound = powerOfTwo / (1 << r);
@@ -52,7 +52,7 @@ public class TournamentBracketGenerator : ITournamentBracketGenerator
             }
         }
 
-        // Łączymy mecze z następną rundą (NextTempId, NextMatchSlot)
+        // Link matches to the next round (NextTempId, NextMatchSlot)
         for (int r = 1; r < totalRounds; r++)
         {
             var currentRoundMatches = roundsNodes[r];
@@ -69,16 +69,16 @@ public class TournamentBracketGenerator : ITournamentBracketGenerator
             }
         }
 
-        // Rozmieszczamy graczy w rundzie 1
-        // Jeśli N < powerOfTwo, część graczy otrzymuje "BYE" (wolny los)
+        // Seed players into round 1
+        // If N < powerOfTwo, remaining slots receive a "BYE" (walkover)
         var round1Matches = roundsNodes[1];
         int byesCount = powerOfTwo - n;
 
-        // Przygotowujemy listę slotów dla rundy 1 (null oznacza BYE)
+        // Prepare the list of slots for round 1 (null means BYE)
         var slots = new List<int?>();
         int playerIdx = 0;
 
-        // Rozdzielamy BYE równomiernie na drugie pozycje w parach
+        // Distribute BYEs evenly across secondary positions in pairs
         for (int i = 0; i < round1Matches.Count; i++)
         {
             slots.Add(uniquePlayers[playerIdx++]);
@@ -94,7 +94,7 @@ public class TournamentBracketGenerator : ITournamentBracketGenerator
             }
         }
 
-        // Wypełniamy mecze rundy 1
+        // Populate round 1 matches
         for (int i = 0; i < round1Matches.Count; i++)
         {
             var match = round1Matches[i];
@@ -106,7 +106,7 @@ public class TournamentBracketGenerator : ITournamentBracketGenerator
 
             if (p1.HasValue && !p2.HasValue)
             {
-                // Wolny los dla gracza 1 -> automatyczny awans do kolejnej rundy
+                // Bye for player 1 -> automatic advance to the next round
                 match.IsBye = true;
                 if (match.NextTempId.HasValue)
                 {
