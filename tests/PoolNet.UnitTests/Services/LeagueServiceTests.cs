@@ -19,8 +19,9 @@ public class LeagueServiceTests : IDisposable
     {
         (_context, _connection) = TestDbContextFactory.CreateInMemoryDbContext();
         var scheduleGen = new LeagueScheduleGenerator();
-        _leagueService = new LeagueService(_context, scheduleGen);
-        _playerService = new PlayerService(_context, new PlayerStatisticsCalculator());
+        var standingsCalc = new LeagueStandingsCalculator();
+        _leagueService = new LeagueService(_context, scheduleGen, standingsCalc);
+        _playerService = new PlayerService(_context, new PlayerStatisticsCalculator(), standingsCalc);
     }
 
     public void Dispose()
@@ -53,7 +54,7 @@ public class LeagueServiceTests : IDisposable
         league.Name.Should().Be("Ekstraklasa Bila 8");
         league.Standings.Should().HaveCount(3);
 
-        // 3 graczy => 3 * 2 = 6 meczów
+        // 3 players => 3 * 2 = 6 matches
         int totalMatches = league.Rounds.SelectMany(r => r.Matches).Count();
         totalMatches.Should().Be(6);
     }
@@ -75,7 +76,7 @@ public class LeagueServiceTests : IDisposable
 
         var firstMatch = league.Rounds.First().Matches.First();
 
-        // Act - Gracz 1 wygrywa 7 : 3
+        // Act - Player 1 wins 7 : 3
         var updatedLeague = await _leagueService.RecordLeagueMatchScoreAsync(firstMatch.LeagueMatchId, 7, 3);
 
         // Assert

@@ -22,7 +22,7 @@ public class LeagueScheduleGenerator : ILeagueScheduleGenerator
         var participants = new List<int>(uniquePlayers);
         if (hasDummy)
         {
-            participants.Add(-1); // -1 oznacza wolny los (BYE)
+            participants.Add(-1); // -1 represents a bye (BYE)
         }
 
         int totalSlots = participants.Count;
@@ -31,7 +31,7 @@ public class LeagueScheduleGenerator : ILeagueScheduleGenerator
 
         var leg1Pairings = new List<ScheduledPairing>();
 
-        // Używamy algorytmu obrotu (Round-Robin Polygon / Berger tables)
+        // Use the polygon rotation algorithm (Round-Robin Polygon / Berger tables)
         var rotatingList = new List<int>(participants);
 
         for (int round = 1; round <= roundsPerLeg; round++)
@@ -43,7 +43,7 @@ public class LeagueScheduleGenerator : ILeagueScheduleGenerator
 
                 if (p1 != -1 && p2 != -1)
                 {
-                    // Naprzemienny wybór gospodarza dla lepszego balansu
+                    // Alternate home/away assignment for balanced pairings
                     bool flip = (i + round) % 2 == 0;
                     int home = flip ? p1 : p2;
                     int away = flip ? p2 : p1;
@@ -52,20 +52,20 @@ public class LeagueScheduleGenerator : ILeagueScheduleGenerator
                 }
             }
 
-            // Obrót elementów (pozycja 0 pozostaje stała, reszta przesuwa się cyklicznie)
+            // Rotate elements (position 0 remains fixed, others shift cyclically)
             int last = rotatingList[^1];
             rotatingList.RemoveAt(rotatingList.Count - 1);
             rotatingList.Insert(1, last);
         }
 
-        // Leg 2: Rewanże z zamianą stron (gospodarz <-> gość)
+        // Leg 2: Return matches with reversed home/away sides
         var leg2Pairings = new List<ScheduledPairing>();
         foreach (var p in leg1Pairings)
         {
             leg2Pairings.Add(new ScheduledPairing(
                 RoundNumber: p.RoundNumber + roundsPerLeg,
                 Leg: 2,
-                Player1Id: p.Player2Id, // Zamiana stron dla rewanżu
+                Player1Id: p.Player2Id, // Swap sides for the return match
                 Player2Id: p.Player1Id
             ));
         }

@@ -17,7 +17,8 @@ public class PlayerServiceTests : IDisposable
     {
         (_context, _connection) = TestDbContextFactory.CreateInMemoryDbContext();
         var statsCalc = new PlayerStatisticsCalculator();
-        _playerService = new PlayerService(_context, statsCalc);
+        var standingsCalc = new LeagueStandingsCalculator();
+        _playerService = new PlayerService(_context, statsCalc, standingsCalc);
     }
 
     public void Dispose()

@@ -5,7 +5,7 @@ public record ScheduledPairing(int RoundNumber, int Leg, int Player1Id, int Play
 public interface ILeagueScheduleGenerator
 {
     /// <summary>
-    /// Generuje terminarz w systemie kołowym (mecz i rewanż - każdy z każdym 2 razy)
+    /// Generates a double round-robin schedule (home and away - each player plays every other player twice)
     /// </summary>
     List<ScheduledPairing> GenerateDoubleRoundRobin(IReadOnlyList<int> playerIds);
 }

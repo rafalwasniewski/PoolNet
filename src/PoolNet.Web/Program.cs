@@ -47,7 +47,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 
 var app = builder.Build();
 
-// Inicjalizacja bazy danych SQLite. Dane demonstracyjne są opcjonalne i nigdy nie nadpisują istniejących danych.
+// SQLite database initialization. Demo seed data is optional and never overwrites existing data.
 if (app.Configuration.GetValue<bool>("SeedData:Enabled"))
 {
     using var scope = app.Services.CreateScope();
@@ -62,8 +62,8 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-// Przekierowanie na HTTPS ma sens tylko wtedy, gdy aplikacja rzeczywiście nasłuchuje na HTTPS.
-// W kontenerze TLS jest zwykle terminowany na reverse proxy.
+// HTTPS redirection only makes sense when the application actually listens on HTTPS.
+// In a container, TLS is typically terminated at a reverse proxy.
 var serverAddresses = app.Services.GetService<IServer>()
     ?.Features.Get<IServerAddressesFeature>()?.Addresses;
 if (serverAddresses?.Any(address => address.StartsWith("https://", StringComparison.OrdinalIgnoreCase)) == true)
