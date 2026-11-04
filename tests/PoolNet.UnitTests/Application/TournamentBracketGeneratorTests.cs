@@ -19,15 +19,15 @@ public class TournamentBracketGeneratorTests
         var bracket = _generator.GenerateBracket(players);
 
         // Assert
-        bracket.Should().HaveCount(3); // 2 w półfinale + 1 finał
+        bracket.Should().HaveCount(3); // 2 in semifinals + 1 final
 
         var round1 = bracket.Where(b => b.RoundNumber == 1).ToList();
         var round2 = bracket.Where(b => b.RoundNumber == 2).ToList();
 
         round1.Should().HaveCount(2);
-        round2.Should().HaveCount(1); // Finał
+        round2.Should().HaveCount(1); // Final
 
-        // Obaj zwycięzcy z rundy 1 powinni celować w finał
+        // Both round 1 winners should target the final
         var finalMatch = round2.Single();
         round1.All(m => m.NextTempId == finalMatch.TempId).Should().BeTrue();
         round1[0].NextMatchSlot.Should().Be(1);
@@ -60,13 +60,13 @@ public class TournamentBracketGeneratorTests
         var bracket = _generator.GenerateBracket(players);
 
         // Assert
-        bracket.Should().HaveCount(3); // Rozmiar 4-osobowy
+        bracket.Should().HaveCount(3); // 4-player bracket size
 
         var byeMatch = bracket.Single(b => b.RoundNumber == 1 && b.IsBye);
         byeMatch.Player1Id.Should().NotBeNull();
         byeMatch.Player2Id.Should().BeNull();
 
-        // Gracz z wolnym losem powinien zostać automatycznie przypisany do finału (runda 2)
+        // Player with a bye should be automatically assigned to the final (round 2)
         var finalMatch = bracket.Single(b => b.RoundNumber == 2);
         (finalMatch.Player1Id == byeMatch.Player1Id || finalMatch.Player2Id == byeMatch.Player1Id)
             .Should().BeTrue("Gracz z wolnym losem awansuje automatycznie do finału");

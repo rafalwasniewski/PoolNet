@@ -19,13 +19,13 @@ public class LeagueScheduleGeneratorTests
         var schedule = _generator.GenerateDoubleRoundRobin(players);
 
         // Assert
-        // N * (N - 1) = 4 * 3 = 12 meczów
+        // N * (N - 1) = 4 * 3 = 12 matches
         schedule.Should().HaveCount(12);
 
-        // 6 kolejek (3 kolejki runda zasadnicza, 3 kolejki rewanże)
+        // 6 rounds (3 regular season rounds, 3 return fixture rounds)
         schedule.Select(x => x.RoundNumber).Distinct().Should().HaveCount(6);
 
-        // Każda para graczy (A, B) musi zagrać ze sobą dokładnie 2 mecze: raz A jako gospodarz, raz B jako gospodarz
+        // Each pair (A, B) must play exactly 2 matches: once A as host, once B as host
         foreach (var p1 in players)
         {
             foreach (var p2 in players)
@@ -48,10 +48,10 @@ public class LeagueScheduleGeneratorTests
         var schedule = _generator.GenerateDoubleRoundRobin(players);
 
         // Assert
-        // 3 * 2 = 6 meczów
+        // 3 * 2 = 6 matches
         schedule.Should().HaveCount(6);
 
-        // Żaden mecz nie powinien zawierać sztucznego gracza (-1)
+        // No match should contain the dummy player (-1)
         schedule.Should().NotContain(m => m.Player1Id == -1 || m.Player2Id == -1);
 
         foreach (var p1 in players)

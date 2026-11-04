@@ -8,12 +8,12 @@ public class TournamentMatch
     public Tournament? Tournament { get; set; }
 
     /// <summary>
-    /// Numer rundy (np. 1 = 1/4 finału, 2 = 1/2 finału, 3 = finał itp.)
+    /// Round number (e.g., 1 = quarterfinals, 2 = semifinals, 3 = final, etc.)
     /// </summary>
     public int RoundNumber { get; set; }
 
     /// <summary>
-    /// Pozycja meczu w danej rundzie
+    /// Match position in the given round
     /// </summary>
     public int MatchOrder { get; set; }
 
@@ -27,18 +27,18 @@ public class TournamentMatch
     public Player? Player2 { get; set; }
 
     /// <summary>
-    /// Kolejny mecz w drabince, do którego awansuje zwycięzca
+    /// Next match in the bracket that the winner advances to
     /// </summary>
     public int? NextTournamentMatchId { get; set; }
     public TournamentMatch? NextTournamentMatch { get; set; }
 
     /// <summary>
-    /// 1 = Player1 w następnym meczu, 2 = Player2 w następnym meczu
+    /// 1 = Player1 in the next match, 2 = Player2 in the next match
     /// </summary>
     public int? NextMatchSlot { get; set; }
 
     /// <summary>
-    /// Flaga oznaczająca wolny los (walkower / bye)
+    /// Flag indicating a bye (walkover)
     /// </summary>
     public bool IsBye { get; set; }
 }

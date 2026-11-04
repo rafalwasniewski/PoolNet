@@ -21,7 +21,7 @@ public class TournamentServiceTests : IDisposable
         (_context, _connection) = TestDbContextFactory.CreateInMemoryDbContext();
         var bracketGen = new TournamentBracketGenerator();
         _tournamentService = new TournamentService(_context, bracketGen);
-        _playerService = new PlayerService(_context, new PlayerStatisticsCalculator());
+        _playerService = new PlayerService(_context, new PlayerStatisticsCalculator(), new LeagueStandingsCalculator());
     }
 
     public void Dispose()
@@ -52,7 +52,7 @@ public class TournamentServiceTests : IDisposable
 
         // Assert
         tournament.Should().NotBeNull();
-        tournament.Rounds.Should().HaveCount(2); // Półfinały + Finał
+        tournament.Rounds.Should().HaveCount(2); // Semifinals + Final
         tournament.Status.Should().Be(TournamentStatus.InProgress);
 
         var semis = tournament.Rounds.First(r => r.RoundNumber == 1);
@@ -77,10 +77,10 @@ public class TournamentServiceTests : IDisposable
             ParticipantPlayerIds = new List<int> { p1.Id, p2.Id }
         });
 
-        // W turnieju 2-osobowym jest tylko 1 runda (Finał)
+        // In a 2-player tournament there is only 1 round (Final)
         var finalMatch = tournament.Rounds.First().Matches.First();
 
-        // Act - P1 wygrywa 5:2
+        // Act - P1 wins 5:2
         var finished = await _tournamentService.RecordTournamentMatchScoreAsync(finalMatch.TournamentMatchId, 5, 2);
 
         // Assert
@@ -136,7 +136,7 @@ public class TournamentServiceTests : IDisposable
             .Rounds.Single(r => r.RoundNumber == 2).Matches.Single();
         int newWinnerId = semiFinal.Player2Id!.Value;
 
-        // Act - korygujemy wynik pierwszego półfinału, wygrywa drugi gracz
+        // Act - correct the score of the first semifinal, player 2 wins
         await _tournamentService.RecordTournamentMatchScoreAsync(semiFinal.TournamentMatchId, 0, 5);
 
         // Assert

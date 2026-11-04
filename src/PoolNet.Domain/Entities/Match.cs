@@ -19,7 +19,7 @@ public class Match
     public int Player2Score { get; set; }
 
     /// <summary>
-    /// Do ilu wygranych partii toczy się mecz (Race to)
+    /// Number of frames required to win the match (Race to)
     /// </summary>
     public int FirstToWins { get; set; }
 
